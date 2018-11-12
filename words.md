@@ -3,6 +3,7 @@ splash screen 	启动画面
 process 	过程 
 depending 	依靠
 platform 	平台
+bunle		打包
 component 	成分
 Tenant 		房客/占用者
 Container 	容器
@@ -169,7 +170,7 @@ remaining	剩下的/剩余的/剩下/剩余/保持/停留
 expand		扩展/发展/展开/变大
 coordinates 坐标/配套服装/协调
 retrieve 	取回/检索/恢复/找回猎物/挽回
-coords 		坐标
+coord 		坐标
 correct		正确的/合适的/改正/批改
 Category	类型，类别，部门
 core		核心,中心/果心

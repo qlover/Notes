@@ -9,7 +9,7 @@
 	+ 属性传递的一种方式--ES6 扩展运算符(...)
 		- 扩展运算符可以将从父类传递的参数以对象形式传递到子类
 		- 也就是打包所有父类传递的参数，然后全部一层一层向下传递
-	+ refs
+	+ `refs`
 		- React 支持一种非常特殊的属性 Ref ，你可以用来绑定到 render() 输出的任何组件上
 
 + 状态 `state`
@@ -41,6 +41,7 @@
 	- React 组件可以用 `&&` 和 三目运算来选择渲染组件
 
 + 列表 & Keys
+	+ key 也是每一个组件的一个属性，可用来作为每一个组件的唯一标识
 
 + 生命周期
 
@@ -72,8 +73,6 @@
 	+ componentWillUnmount
 		- 在组件从 DOM 中移除之前立刻被调用
 
-
-
 + 组件 API
 	+ 设置状态: setState(object nextState[, function callback])
 		- nextState，将要设置的新状态，该状态会和当前的 state 合并
@@ -103,9 +102,46 @@
 		- 可以使用该方法保证了setState()和forceUpdate()在异步场景下的调用不会出错。
 
 + 组件通信
-	
 	+ 利用 props 的传递
 
+
+# react-router
+
+v4 的版本则将路由进行了拆分，将其放到了各自的模块中，不再有单独的 router 模块，充分体现了组件化的思想
+
+<BrowserRouter> 的使用与之前作为 history 属性传入的方式也不同了。
+
+v4 中改从 'react-router-dom' 引入的原因是因为还有个 native 版本，这个意味着是 web 版本
+`import { BrowserRouter, Route } from 'react-router-dom'`
+
+## 包含式路由与exact
+
+如果想要只匹配一个路由，除了 exact 属性之外，还可以使用 Swtich 组件
+
+在 v4 的版本中废弃了 <IndexRoute>，而该用 <Route exact> 的方式进行代替。如果没有匹配的路由，也可通过 <Redirect> 来进行重定向到默认页面或合理的路径。
+
+	
+# Redux 
+
+单向数据流
+
+安装  redux 和 react-redux
+
+`npm install react-redux redux`
+
+
+## 目录结构
+
++ actions
++ components
++ container
++ reducer
+- index.html
+- server.js
+- webpack
+
+
+## 组件对象 container
 
 
 

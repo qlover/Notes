@@ -344,4 +344,13 @@ mysql/bin$ mysqldump -uroot -p --all-databases > [指定路径];
 // 导入指定路径到当前 mysql 库中
 mysql> sourced:\[指定路径];
 
+// 让表 id 重新从 1 开始
+TRUNCATE TABLE table;
 
+// 因为 Mysql 一次只能显示 1000 条数据
+// 如果数据大于了 1000 条，则看不到
+// 该命令可以看出所有的数据条数
+`select count(*) from 表名;`
+
+// 利用 FB 官方的脚手架直接生产 react 的工作目录结构
+npx create-react-app [项目名]
