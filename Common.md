@@ -354,3 +354,6 @@ TRUNCATE TABLE table;
 
 // 利用 FB 官方的脚手架直接生产 react 的工作目录结构
 npx create-react-app [项目名]
+
+// 解决提交时输入密码
+git config --gloabl credential.helper store
