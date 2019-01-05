@@ -48,6 +48,17 @@ webpack.config.js
 }
 ```
 
+HtmlWebpackPlugin({
+	title: 'xxx', // 可以在模板文件中用 <%= htmlWebpackPlugin.options.title %>
+	inject: false // 可以取消默认添加
+	minify: {  // 对文件进行压缩
+
+}
+})
+
+output: {
+	publicPath: 'http://cdn.com/' // 表示上线上会将地址前面替换成该一个绝对路径
+}
 
 
 # webpack
@@ -131,6 +142,17 @@ output: {
 	运行 npm run server
 
 4. 模块热更新
+
+## path.join AND path.reslove
+```
+> path.join('app','dist')
+'app\\dist'
+> path.resolve('app','dist')
+'C:\\Users\\Qlover\\app\\dist'
+```
+path.join 只对当前的工作目录进行拼接，可以说是相对的路径
+path.resolve 返回绝对的路径 
+
 
 
 
