@@ -154,7 +154,7 @@ f 垂直位移 0
 	- 将第二个 canvas 中的内容加载到第一个 canvas 上
 
 + Viewport 元信息
-```
+```z
 <meta name="viewport"
 	content="
 		width=[pixel|device],

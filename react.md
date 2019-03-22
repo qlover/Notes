@@ -145,26 +145,44 @@ v4 中改从 'react-router-dom' 引入的原因是因为还有个 native 版本�
 
 
 
-+ Action
-action 是把数据从应用传到 store 的有效载荷。它是 store 数据的唯一来源。用来表明一个事件的发生，但并不对状态如何修改做任何描述。一个action 的结构是一个 javascript 普通对象，一个 action 的结构如下
-```
-{
-  //type字段用于标识action的类型，一般用一个字符串来表示
-  type: 'ADD_TODO', 
-  //text是用户自定义的字段，一般用来传递和状态修改相关的参数
-  text: 'Build my first Redux app'
-}
-```
 
-+ Reducer
-	reducer 就是对状态修改过程的描述，但是需要注意的有以下两点：
-	1. 由于状态是只读的，reducer 本身并不能真正实现状态的修改，而是只把新状态作为返回值返回。
-	2. 为了确保每次对状态修改的结果都是一致的，reducer 必须是一个纯函数，也就是说，只要是同样的输入，必定得到同样的输出。纯函数需要遵循以下约束：
-+ Store
-	在定义了描述事件发生的 action 和描述状态修改方案的 reducer 之后，如何把它们联系到一起真正实现状态的改变呢？这就要牵扯到 store 啦，前面已经提过 redux 的原则之一就是所有的 state 构成的对象树都存到了 store 中，除此之外 store 还有以下功能：
 
-	- 提供 getState() 方法获取 state
-	- 提供 dispatch(action)方法更新 state；
-	- 通过 subscribe(listener)注册监听器;
-	- 通过 subscribe(listener)返回的函数注销监听器。
++ store 
+	- 存放全局的所有状态的一个对象
++ action
+	- 描述做什么事的类型
 
++ reducer
+	- 修改状态，返回一个全新的 state ,达到做什么事
+
++ store.getState()
+	- 得到 redux 的全新数据
+	- 在根元素中将这个数据当做 props 渲染到组件中
+
++ store.dispatch()
+	- 更新 redux 中的数据
+	- 也就是发出做什么事的类型，action
+
++ store.subscribe(render)
+	- 监听 redux 中的状态，一旦状态被改变，就调用 render 回调
+
++ Provider
+	- 所有被该组件包括的组件都可以直接通过 react-redux 通信
+	- 而不用一层一层的传递信息
+	- 目的就是让所有组件都能够访问到 Redux 中的数据
++ connect(mapStateToProps, mapDispatchToProps)(MyComponent)
+	- 该方法起一个很重要的作用就是，将 redux 的状态信息传递给 react 组件，也就是说将 store 和组件之间的一个联系
+	+ mapStateToProps()
+		- 把 Redux 中的数据映射到 React 中的 props 中去
+	+ mapDispatchToProps()
+		- 就是把各种 dispatch 也变成了 props 让你可以直接使用
+	+ MyComponent 
+		- 最后应用的组件
+
+开发环境调用后台路径配置：
+`proxy.config.js`文件下可以自由定义接口调用到的后台地址，业务模块不要出现应用路径(BackGround)；
+ 
+各个模块目录下：
+- api.js      定义与后台交互的接口方法
+- action.js   定义页面操作触发的动作(eg. 点击查询按钮)
+- reducer.js  定义触发动作后的影响(eg. 查询完成后将查询结果set回state，视图自动刷新)

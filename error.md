@@ -82,7 +82,7 @@
 在用该方法的时候，需要特别注意，该函数对变量处理的作用域
 比如需要在一秒内随机输出一个数字
 
-```
+```js
 var r = Math.round(Math.random()*255);
 setTimeout(function(){
 	alert(r);		//是不是在这里就会觉得可以达到
@@ -135,7 +135,7 @@ li img:hover{ opacity:0.999; transform:scale(1.05);}
 
 # 连续赋值的问题
 
-```js
+```javascript
 var a = b =5; //虽然这样看，看不出啥子问题
 alert(a);
 alert(b);	//两个照样打印出来，但是
@@ -150,6 +150,18 @@ alert(b);	//两个照样打印出来，但是
 
 
 
+## TP5 中闭包查询中不能使用上层作用域变量问题
+```
+$checkEmployeeInfo = OrganizationEmployeeModel::where('organization_employee_id', '<>', $organization_employee_id)
+    ->where(function ($query) use($employeeInfo) { // 闭包中需要使用 use 得外层变量
+        $query->where('id_number', $employeeInfo['id_number'])
+            ->whereOr('mobile', $employeeInfo['mobile']);
+    })
+    ->find();
+```
+
+
+保存员工时，机构部门显示问题
 
 
 
@@ -159,16 +171,11 @@ alert(b);	//两个照样打印出来，但是
 
 
 
+SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key 'id_number'
+索引不能重复
 
-
-
-
-
-
-
-
-
-
+注册机构时，不知道是注册分支还是总部不清楚父机构ID有没有
+注册员工时和机构时不知道角色
 
 
 
