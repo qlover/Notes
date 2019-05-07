@@ -99,7 +99,8 @@ Vuex 的 state/getter 和 mapState/mapGetters 很类似 Redux 的 containers, �
 
 
 
-
+vue 路由刷新当前页面跳转到另一个页面？
+	1.路由中的条目 name 不能重复
 
 
 

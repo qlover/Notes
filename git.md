@@ -252,3 +252,5 @@ review代码
 ## git push origin 分支名//把test分支的代码push到远程库
 
 
+git relog # 查看历史保存记录
+git reset --hard [历史记录名称]

@@ -178,7 +178,14 @@ SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '' for key
 注册员工时和机构时不知道角色
 
 
+# php7 could not find diver
 
+1extension=php_pdo.dll这个文件是否存在
+2打开windows下的php.ini，查找 extension_dir = "地址"，查看这个地址是否有文件夹
+3看该文件夹中是否包含上述文件
+4新建一个php页面，输入<?php phpinfo(); ?>预览，查看是否已经开启了先关扩展
+
+如果发现 no value, 则改变 php.ini extension_dir = "E:/wamp/php7/ext" 绝对路径
 
 
 

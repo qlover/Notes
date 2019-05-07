@@ -41,10 +41,3 @@ define('ANIMALS', [
 
 echo ANIMALS[1]; // 输出 "cat"
 ```
-allowField(true) 过滤不是数表中的字段
-data([]) 方法批量赋值
-
-strstr() 查找字符串，成功返回，失败返回false
-strrpos() 成功大于-1
-tp5 Route 中可用变量替换
-多个需要可选判断的字体用数组循环

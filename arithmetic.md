@@ -101,12 +101,95 @@ def getArea(r):
 
 ```javascript
 const getSum = (A, B) => {
-  let result = []
+  let result = [0]
+  if(A > B){
+    //[A,B] = [B,A]
+    return 0
+  }
   for(let i = A; i <= B; ++i){
-    if (!i%3) {
+    if (i%3 == 0) {
       result.push(i)
     }
   }
   return result.reduce((prev, cur) => prev + cur)
+}
+
+```
+
+# 字符串匹配
+
+时间复杂度:O(nm)
+
+```javascript
+const subStr = (master='ababababaadb', parrten='abaca') => {
+  let target = -1
+  if (master.length <= parrten ) {
+    return target
+  }
+  let i,j;
+  for( i = 0; i < master.length; ++i ){
+    for( j = 0; j < parrten.length; ++j ){
+      if ( master[i + j] != parrten[j]){
+        break;
+      }
+    }
+    if (j >= parrten.length) {
+      target = i
+      break;
+    }
+  }
+  return target
+}
+```
+
+# KMP
+利用子串临时数组
+时间复杂度:O(n+m)
+
+```javascript
+const computeTemporaryArray = pattern => {
+  let lps = []
+  let index = 0;
+  for(let i = 1; i < pattern.length;){
+    if(pattern[i] == pattern[index]){
+      lps[i] = index + 1;
+      index++;
+      i++;
+    }else{
+      if(index != 0){
+        index = lps[index-1];
+      }else{
+        lps[i] = 0;
+        i++;
+      }
+    }
+  }
+  return lps;
+}
+
+const KMP = ( text, pattern ) => {        
+  let lps = computeTemporaryArray(pattern);      
+  let i = 0;
+  let j = 0;
+  let target = -1
+  while( i < text.length && j < pattern.length ){
+    if( text[ i ] == pattern[ j ] ){
+      i++;
+      j++;
+    } else {
+      if( j != 0 ){
+        j = lps[ j-1 ];
+      }else{
+        i++;
+      }
+    }
+    if( j == pattern.length ){
+      // 此时子串已经在主串中匹配完毕
+      // i 和 j 都已经自增一次，所以 i - j 就是匹配第一次的长度
+      target = i - j
+      break
+    }
+  }
+  return target
 }
 ```
