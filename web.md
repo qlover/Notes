@@ -100,3 +100,12 @@ XHR 和 Fetch 遵循同源策略
 # https://leohxj.gitbooks.io/front-end-database/content/index.html
 
 
+
+Commit Message 格式
+```
+<type>(<scope>): <subject>
+<空行>
+<body>
+<空行>
+<footer>
+```
