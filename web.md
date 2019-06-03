@@ -31,6 +31,37 @@ Last-Modified: ...
 
 ### HTTP 缓存
 
+HTTP 缓存的最大用处
+1. 缓解服务器端压力
+2. 提升性能(获取资源的耗时更短了)
+
+#### Cache-Control (req/res) 
+
+1. no-store 禁止 req/res 进行缓存，每一次的 req 都会下载完整的响应内容
+2. no-cache 强制确认缓存， server 对 req 进行确认， cache 是否过期, 没过期就使用 cache
+3. public/private(缺省) public 会被任何中间人缓存,private 浏览器私有缓存
+
+####　If-None-Match || If-Modified-Since (req)
+
+理论上缓存是可以永久保存的,但只有有限的存储空间
+
+该请求头信息可以检测服务器资源是否更新
+
+缓存失效计算公式
+```
+expirationTime = responseTime + freshnessLifetime - currentAge
+```
+
+#### 加速资源
+
+对于一些低频率更新的资源,比如(css,js) 的 URL 后面加上一个版本号，该资源就会被视作完全新的资源，不好的地方就是每一处都会更新
+
+而更好的就是当低频更新的资源（js/css）变动了，只用在高频变动的资源文件（html）里做入口的改动
+
+### Cookie
+
+
+
 # 请求/响应(req,res)
 
 # e.设计(页面架构,针对不同显示用不同单位等)
