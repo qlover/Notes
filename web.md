@@ -60,7 +60,41 @@ expirationTime = responseTime + freshnessLifetime - currentAge
 
 ### Cookie
 
+1. 会话状态管理
+2. 修改化设置
+3. 浏览器行为追踪
 
+现代浏览器中 Cookie 已经渐渐被淘汰,取而代之是 `Web Storage` 或 `IndexDB`
+
+#### SetCookie res
+
+服务器响应头,指定设置 Cookie
+
+#### Cookie req
+客户端接收到响应,后服务端有 Set Cookie 头信息,则会用 Cookie 头信息将保存的 Cookie 信息发送出去
+
+res
+```
+HTTP/1.0 200 OK
+Content-type: text/html
+Set-Cookie: name=qlover
+Sst-Cookie: age=20
+```
+
+req
+```
+GET /login.php HTTP/1.0
+HOST: local.php.com
+Cookie: name=qlover; age=20
+```
+
+Secure 标记,如果在 req 中 Cookie 中携带了 Secure 标记,则 req 只会从 HTTPS 发送
+
+但 Cookie 发送数据太不安全,所以在 Chrome52+ 和 FF52+ `http:` 将无法使用 Secure
+
+HttpOnly 标记,则会将该 Cookie 作用于客户端与服务器之间,也就是说普通的 `document.cookie` API 则无法访问带有 HttpOnly 标记的 Cookie
+
+可以避免 XSS 攻击
 
 # 请求/响应(req,res)
 
