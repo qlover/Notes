@@ -98,6 +98,73 @@ HttpOnly 标记,则会将该 Cookie 作用于客户端与服务器之间,也就�
 
 # 请求/响应(req,res)
 
+HTTP消息由采用ASCII编码的多行文本构成
+
+在HTTP/1.1及早期版本中，这些消息通过连接公开地发送,在HTTP/2中，为了优化和性能方面的改进，曾经可人工阅读的消息被分到多个HTTP帧中
+
+起始行和  HTTP 消息中的HTTP 头统称为请求头，而其有效负载被称为消息正文
+
+## req
+### 起始行
+
+HTTP请求是由客户端发出的消息，用来使服务器执行动作。起始行 (start-line) 包含三个元素：
+1. HTTP 请求方法 GET | POST | OPTION | DELETE ...
+2. 请求目标 (request target)，通常是一个 URL，或者是协议、端口和域名的绝对路径，通常以请求的环境为特征
+  请求的格式因不同的 HTTP 方法而异。它可以是：
+  · 一个绝对路径，末尾跟上一个 ' ? ' 和查询字符串。这是最常见的形式，称为 原始形式 (origin form)，被 GET，POST，HEAD 和 OPTIONS 方法所使用。
+    ```
+    POST / HTTP 1.1
+    GET /background.png HTTP/1.0
+    HEAD /test.html?query=alibaba HTTP/1.1
+    OPTIONS /anypage.html HTTP/1.0
+    ```
+  · 一个完整的URL，被称为 绝对形式 (absolute form)，主要在 GET 连接到代理时使用。
+    ```GET http://developer.mozilla.org/en-US/docs/Web/HTTP/Messages HTTP/1.1```
+  ·由域名和可选端口（以':'为前缀）组成的 URL 的 authority component，称为 authority form。 仅在使用 CONNECT 建立 HTTP 隧道时才使用。
+    ```CONNECT developer.mozilla.org:80 HTTP/1.1```
+  ·星号形式 (asterisk form)，一个简单的星号('*')，配合 OPTIONS 方法使用，代表整个服务器。
+    ```OPTIONS * HTTP/1.1```
+3. HTTP 版本 (HTTP version)，定义了剩余报文的结构，作为对期望的响应版本的指示符。
+
+### Header
+
+来自请求的 (HTTP headers)[https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers] 遵循和 HTTP header 相同的基本结构：不区分大小写的字符串，紧跟着的冒号 (':') 和一个结构取决于 header 的值。 整个 header（包括值）由一行组成，这一行可以相当长
+
+### Body
+
+*不是所有的请求都有一个 body*
+例如获取资源的请求，GET，HEAD，DELETE 和 OPTIONS，通常它们不需要 body
+
+有些请求将数据发送到服务器以便更新数据：常见的的情况是 POST 请求
+
+## res
+
+### 状态行
+
+HTTP 响应的起始行被称作 状态行 (status line)，包含以下信息：
+
+1. 协议版本，通常为 HTTP/1.1。
+2. 状态码 (status code)，表明请求是成功或失败。常见的状态码是 200，404，或 302。
+3. 状态文本 (status text)。一个简短的，纯粹的信息，通过状态码的文本描述，帮助人们理解该 HTTP 消息。
+
+一个典型的状态行看起来像这样
+```HTTP/1.1 404 Not Found```
+
+### Header
+
+### Body
+
+不是所有的响应都有 body：具有状态码 (如 201 或 204) 的响应，通常不会有 body
+
+Body 大致可分为三类：
+
+1. Single-resource bodies，由已知长度的单个文件组成。该类型 body 由两个 header 定义：`Content-Type` 和 `Content-Length`。
+2. Single-resource bodies，由未知长度的单个文件组成，通过将 `Transfer-Encoding` 设置为 `chunked` 来使用 chunks 编码。
+4. Multiple-resource bodies，由多部分 body 组成，每部分包含不同的信息段。但这是比较少见的。
+
+
+
+
 # e.设计(页面架构,针对不同显示用不同单位等)
 
 # 浏览器(内核,同源策略原理,渲染...)
@@ -244,6 +311,7 @@ Access-Control-Allow-Methods: <method>[, <method>]*
 Access-Control-Allow-Headers: <field-name>[, <field-name>]*
 ```
 
+## WebSock
 
 
 
