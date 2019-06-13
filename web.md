@@ -41,7 +41,7 @@ HTTP 缓存的最大用处
 2. no-cache 强制确认缓存， server 对 req 进行确认， cache 是否过期, 没过期就使用 cache
 3. public/private(缺省) public 会被任何中间人缓存,private 浏览器私有缓存
 
-####　If-None-Match || If-Modified-Since (req)
+#### If-None-Match || If-Modified-Since (req)
 
 理论上缓存是可以永久保存的,但只有有限的存储空间
 
@@ -114,11 +114,136 @@ HttpOnly 标记,则会将该 Cookie 作用于客户端与服务器之间,也就�
 
 检测 `Cross-Site Request Forgery` (CSRF) 可以阻止跨源访问
 
-### CORS
+## HTTP访问控制(CORS)
 
 `CORS` 跨域资源共享，使用额外的 HTTP 请求头来允许不同源服务器上指定的资源
 
 XHR 和 Fetch 遵循同源策略
+
+### 什么情况需要 CORS
+
+· 前文提到的由 XMLHttpRequest 或 Fetch 发起的跨域 HTTP 请求。
+· Web 字体 (CSS 中通过 @font-face 使用跨域字体资源), 因此，网站就可以发布 TrueType 字体资源，并只允许已授权网站进行跨站调用。
+· WebGL 贴图
+· 使用 drawImage 将 Images/video 画面绘制到 canvas
+· 样式表（使用 CSSOM）
+
+跨域资源共享在 HTTP 头部声明一组字段,使其能够通过浏览器有权限访问哪些资源
+
+如果 HTTP 请求会对服务器有副作用, 浏览器则必须先用 `OPTIONS` 方法发起一个预检请求（preflight request），从而获知服务端是否允许该跨域请求,是否需要谁也会在该请求方式中得到响应
+
+req 发送 `origin` 字段, res 响应 `Access-Control-Allow-Origin`,如果 `origin` 来源在 `Access-Control-Allow-Origin` 中则是达成 CORS,这也是`简单请求`完成的最简单的访问控制
+
+### 简单请求
+
+完全满足五个条件就是简单请求
+1. HTTP 请求方法是 GET | HEAD | POST
+2. *不得人为设置* `CORS 安全的首部字段集合` 之外的首部字段
+  Accept,Accept-Language,Content-Language,Content-Type (需要注意额外的限制),DPR,Downlink,Save-Data,Viewport-Width,Width
+3. Content-Type text/palin | multipart/form-data | application/x-www-form-urlencoded
+4. `XMLHttpRequestUpload` 没有任何监听事件
+5. 请求不包括 `ReadableStream` 对象
+
+### 预检请求
+
+当 HTTP 请求对服务器有副作用,浏览器必须先完成预检请求
+完全满足以下五个条件
+1. PUT | DELETE | CONNECT |OPTIONS | TRACE | PATCH
+2. *人为设置* `CORS 安全的首部字段集合` 之外的首部字段
+  Accept,Accept-Language,Content-Language,Content-Type (需要注意额外的限制),DPR,Downlink,Save-Data,Viewport-Width,Width
+3. Content-Type *不属于* application/x-www-form-urlencoded | multipart/form-data | text/plain 其中之一
+4. `XMLHttpRequestUpload` 注册任意多个监听事件
+5. 使用了 `ReadableStream` 对象
+
+预检请求与响应
+```
+ 1.OPTIONS /resources/post-here/ HTTP/1.1
+ 2.Host: bar.other
+ 3.User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+ 4.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+ 5.Accept-Language: en-us,en;q=0.5
+ 6.Accept-Encoding: gzip,deflate
+ 7.Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+ 8.Connection: keep-alive
+ 9.Origin: http://foo.example
+10.Access-Control-Request-Method: POST # 告知服务器实际请求时用 POST 方法
+11.Access-Control-Request-Headers: X-PINGOTHER, Content-Type # 告知服务器实际请求将会携带两个自定义请求头部字段
+12.
+13.
+14.HTTP/1.1 200 OK
+15.Date: Mon, 01 Dec 2008 01:15:39 GMT
+16.Server: Apache/2.0.61 (Unix)
+17.Access-Control-Allow-Origin: http://foo.example
+18.Access-Control-Allow-Methods: POST, GET, OPTIONS # 预检响应,服务器允许POST GET OPTIONS 
+19.Access-Control-Allow-Headers: X-PINGOTHER, Content-Type # 允许
+20.Access-Control-Max-Age: 86400 # 该预检请求有效期 86400s
+21.Vary: Accept-Encoding, Origin
+22.Content-Encoding: gzip
+23.Content-Length: 0
+24.Keep-Alive: timeout=2, max=100
+25.Connection: Keep-Alive
+26.Content-Type: text/plain
+```
+实际请求与响应
+```
+POST /resources/post-here/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+X-PINGOTHER: pingpong
+Content-Type: text/xml; charset=UTF-8
+Referer: http://foo.example/examples/preflightInvocation.html
+Content-Length: 55
+Origin: http://foo.example
+Pragma: no-cache
+Cache-Control: no-cache
+
+<?xml version="1.0"?><person><name>Arun</name></person>
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:40 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://foo.example
+Vary: Accept-Encoding, Origin
+Content-Encoding: gzip
+Content-Length: 235
+Keep-Alive: timeout=2, max=99
+Connection: Keep-Alive
+Content-Type: text/plain
+
+[Some GZIP'd payload]
+
+```
+*预检重定向被 CORS 废弃*
+
+### CORS req 字段
+```
+# 源站，不管是否跨域该字段都会被发送
+Origin: <origin>
+# 告知实际请求时使用的 HTTP 请求方法
+Access-Control-Request-Method: <method>
+# 告知实际请求时携带的头
+Access-Control-Request-Headers: <field-name>[, <field-name>]*
+```
+### CORS res 字段
+```
+Access-Control-Allow-Origin: <origin> | *
+# 允许将访问的头放入白名单
+Access-Control-Expose-Headers: X-My-Custom-Header, X-Another-Custom-Header
+# 指定预检请求缓存多长时间
+Access-Control-Max-Age: <delta-seconds>
+Access-Control-Allow-Credentials: true
+# 允许的 HTTP 请求方法
+Access-Control-Allow-Methods: <method>[, <method>]*
+# 允许的 HTTP 请求头
+Access-Control-Allow-Headers: <field-name>[, <field-name>]*
+```
+
 
 
 
