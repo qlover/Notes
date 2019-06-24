@@ -297,6 +297,138 @@ Body 大致可分为三类：
 
 # 浏览器(内核,同源策略原理,渲染...)
 
+## 浏览器内核
+
+浏览器最重要或者说核心的部分是“Rendering Engine”，可大概译为“渲染引擎”，不过我们一般习惯将之称为“浏览器内核”。
+
+通常所谓的浏览器内核也就是浏览器所采用的渲染引擎
+
+浏览器内核主要包括三个分支技术：`排版渲染引擎`、 `JavaScript引擎`，`以及其他`。
+
+1. Trident IE 内核
+  其中 IE8 的 JavaScript 引擎是 JScript 引擎, IE9 开始使用 Chakra
+2. Gecko  FF 内核
+  JavaScript 引擎使用 Spider Monkey 第一款 JavaScript 引擎
+3. Webkit Safari 内核 Chrome 内核原型
+  Android 默认浏览器使用 Webkit 内核
+4. Blink Chrome 最新的内核(Safari 目前也使用的内核)
+  而谷歌方面，则使用了自己研发的 V8 引擎
+
+
+内核  是否开源  插件支持  应用浏览器 支持操作系统
+Trident 否，但提供接口调用 ActiveX IE  Windows
+Gecko 是，多种协议授权发行，包括MPL、GPL、LGPL NPAPI Firefox Windows,Mac,Linux/BSD
+Blink 是 NPAPI Chrome，Opera  Windows,Mac,Linux/BSD
+Webkit  是，遵从LGPL协议  NPAPI Chrome,Safar  Windows,Mac,Linux/BSD
+
+
+可这样理解，浏览器内核虽然包括三个分支，但其主要就是完成页面渲染的排版引擎
+
+因为网页浏览器的排版引擎（Layout Engine或Rendering Engine）也被称为浏览器内核、页面渲染引擎或模板引擎，它负责取得网页的内容（HTML、XML、图像等等）、整理消息（例如加入CSS等），以及计算网页的显示方式，然后会输出至显示器或打印机。所有网页浏览器、电子邮件客户端以及其它需要根据表示性的标记语言（Presentational markup）来显示内容的应用程序都需要排版引擎
+
+所以说排版引擎就是用来渲染 HTML CSS 等页面的
+
+而另一个很重要的就是 JavaScript 引擎
+
+
+### 排版引擎
+
+1. WebCore
+  该引擎是在 KHTML 引擎基础上而来的
+2. KHTML
+
+#### 浏览器解析 HTML 
+
+目前浏览器的排版引擎有三种模式：
+
+1. 怪异模式（Quirks mode）
+2. 接近标准模式（Almost standards mode）
+3. 标准模式（Standards mode）
+
+对HTML文件来说，浏览器使用文件开头的 DOCTYPE 来决定用怪异模式处理或标准模式处理
+
+#### 布局渲染
+
+
+
+## ECMAScript 
+
+ECMAScript是一种由 Ecma 国际通过 ECMA-262 标准化的脚本程序设计语言
+
+它往往被称为JavaScript或JScript
+
+所以它可以理解为是 JavaScript 的一个标准
+
+但 JScript 和 JavaScript 实际上是 ECMA-262 标准的实现和扩展
+
+1995年Netscape公司发布的Netscape Navigator 2.0中，发布了与Sun联合开发的JavaScript 1.0并且大获成功， 并且随后的3.0版本中发布了JavaScript1.1，恰巧这时微软进军浏览器市场，IE 3.0搭载了一个JavaScript的克隆版-JScript， 再加上Cenvi的ScriptEase（也是一种客户端脚本语言），导致了三种不同版本的客户端脚本语言同时存在。为了建立语言的标准化，1997年JavaScript 1.1作为草案提交给欧洲计算机制造商协会（ECMA），第三十九技术委员会（TC39）被委派来“标准化一个通用的，跨平台的，中立于厂商的脚本语言的语法和语意标准”。最后在Netscape、Sun、微软、Borland等公司的参与下制订了ECMA-262，该标准定义了叫做ECMAScript的全新脚本语言。
+
+ECMAScript实际上是一种脚本在语法和语义上的标准。实际上 JavaScript 是由 `ECMAScript`，`DOM` 和 `BOM` 三者组成的
+
+### JScript
+
+JScript 是由微软公司开发的活动脚本语言，是微软对 ECMAScript 规范的实现
+
+JScript8.0 是 基于 ECMAScript 的一个新版本, 功能更加强大 
+
+
+### JavaScript 
+
+JavaScript一种直译式脚本语言，是一种动态类型、弱类型、基于原型的语言，内置支持类型
+
+解析 JavaScript 的解释器就被称为 JavaScript 引擎
+
+因 JavaScript 与其它的 JScript, 或者 ActionScript 更兼容 ECMA 标准,所以 JavaScript 也叫做 `ECMAScript`
+
+JavaScript 组成部分分三种
+1. ECMAScript 描述语法与基本对象
+2. DOM 描述处理网页内容的方法和接口
+3. BOM 描述与浏览器进行交互的方法和接口
+
+它最初由 Netscape 的 Brendan Eich 设计。*JavaScript是甲骨文公司的注册商标*
+
+现在 JavaScript 已经被 Netscape 公司提交给 ECMA 制定为标准，称之为 `ECMAScript`，标准编号ECMA-262
+
+符合ECMA-262 3rd Edition标准的实现有:
+
+
+1. Microsoft公司的JScript.
+2. Mozilla的JavaScript-C（C语言实现），现名SpiderMonkey
+3. Mozilla的Rhino（Java实现）
+4. Digital Mars公司的DMDScript
+5. Google公司的V8
+6. WebKit
+
+#### 子集与超集
+
+大多数语言都会定义它们的子集，用以更安全地执行不信任的第三方代码。
+
+Douglas Crockford曾写过一本很簿的书《JavaScript: The Good Parts》，专门介绍JavaScript中值得发扬光大的精华部分。
+
+这个语言子集的目标是规避语言中的怪癖、缺陷部分，最终编程更轻松、程序更健壮。
+
+子集的设计目的是能在一个容器或"沙箱"中更安全地运行不可信的第三方JavaScript代码。所有能破坏这个沙箱并影响全局执行环境的语言特性和API在这个安全子集中都是禁止的。
+为了让JavaScript代码静态地通过安全检查，必须移除一些JavaScript特性：
+
+· 禁止使用this关键字，因为函数(在非严格模式中)可能通过this访问全局对象。
+· 禁止使用with语句，因为with语句增加了静态代码检查的难度。
+· 静态分析可以有效地防止带有点(.)运算符的属性存取表达式去读写特殊属性。但我们无法对方括号([])内的字符串表达式做静态分析。基于这个原因，安全子集禁止使用方括号，除非括号内是一个数字或字符串直接量。
+· eval()和Function()构造函数在任何子集里都是禁止使用的，因为它们可以执行任意代码，而且JavaScript无法对这些代码做静态分析。
+· 禁止使用全局变量，因此代码中不能有对Window对象的引用和对Document的引用。
+· 禁止使用某些属性和方法，以免在水箱中的代码拥有过多的权限。如：arguments对象的两个属性caller和callee、函数的call()和apply()方法、以及constructor和prototype两个属性。
+
+
+而相对于当前 JavaScript 的超集来说，主要就是 `TypeScript` 和 `CoffeeScript`
+*TypeScrip 始于JavaScript，归于JavaScript*
+
+浏览器的 JavaScript 引擎就是为了解释 JavaScript 而存在
+
+可以这样理解 `JavaScript` `JSscript` `ActionScript` 分别可以是 ECMAScript 的子集
+
+既然浏览器的 JavaScript 引擎是运行 JavaScript 的地方
+
+那么 Babel 就是将浏览器未实现的 ECMAScript 规范语法转化为浏览器可运行的低版本代码
+
 ## 同源策咯
 
 1. URL 端口一样(IE除外)
