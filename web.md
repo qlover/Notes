@@ -6,11 +6,14 @@
 # 网络(internet,http,tcp,udp,ssl,加密)
 
 
-## TCP/IP
+## TCP/IP模型
 
 网络结构有两种主流的分层方式: OSI 七层模型和 TCP/IP 四层模型
 
 TCP/IP是指传输控制协议/网间协议，是目前世界上应用最广的协议
+
+## UDP
+
 
 ### TCP 三次握手(建立链接)
 
@@ -44,11 +47,24 @@ Http和Https协议请求时都会通过Tcp三次握手建立Tcp连接。
 3. 在协议开发之前，就有了OSI模型，所以OSI模型具有共通性，而TCP/IP是基于协议建立的模型，不适用于非TCP/IP的网络
 4. 实际应用中，OSI模型是理论上的模型，没有成熟的产品；而TCP/IP已经成为国际标准
 
+### TCP 与 UDP 
 
+||UDP|TCP|
+|：-：|：-：|：-：|
+|是否连接|	无连接	| 面向连接
+|是否可靠|	不可靠传输，不使用流量控制和拥塞控制	| 可靠传输，使用流量控制和拥塞控制
+|连接对象个数|	支持一对一，一对多，多对一和多对多交互通信	| 只能是一对一通信
+|传输方式|	面向报文	| 面向字节流
+|首部开销|	首部开销小，仅 8 字节	首部最小 20 字节，最大 60 | 字节
+|适用场景|	适用于实时应用（IP 电话、视频会议、直播等）	| 适用于要求可靠传输的应用，例如文件传输
 
 ## HTTP
 
+https://http2.akamai.com/demo
+
 HTTP 是基于 TCP/IP 协议的应用层协议，它不涉及数据包传输，主要规定了客户端可服务区之间的通信格式
+
+HTTP是半双工协议，在同一时刻数据只能单向流动
 
 HTTP是一个client-server协议，其作用有:
 1. 缓存
@@ -223,6 +239,18 @@ Https协议就是使用RSA加密算法，可以说RSA加密算法是宇宙中最
 加密过程[http://www.ruanyifeng.com/blog/2013/07/rsa_algorithm_part_two.html](http://www.ruanyifeng.com/blog/2013/07/rsa_algorithm_part_two.html)
 
 
+## WebSocket
+
+WebSocket是一种全新的协议，随着HTML5草案的不断完善，越来越多的现代浏览器开始全面支持WebSocket技术了，它将TCP的Socket（套接字）应用在了webpage上，从而使通信双方建立起一个保持在活动状态连接通道
+
+但还是建立在 HTTP 协议基础上的,所以连接发起方依然是客户端
+
+而一旦确立 WebSocket 通信连接，不论服务器还是客户端，任意一方都可直接向对方发送报文
+
+WebSocket 是类似 `Socket` 的TCP长连接的通讯模式，一旦 WebSocket 连接建立后，后续数据都以帧序列的形式传输
+
+
+
 
 # 请求/响应(req,res)
 
@@ -289,8 +317,6 @@ Body 大致可分为三类：
 1. Single-resource bodies，由已知长度的单个文件组成。该类型 body 由两个 header 定义：`Content-Type` 和 `Content-Length`。
 2. Single-resource bodies，由未知长度的单个文件组成，通过将 `Transfer-Encoding` 设置为 `chunked` 来使用 chunks 编码。
 4. Multiple-resource bodies，由多部分 body 组成，每部分包含不同的信息段。但这是比较少见的。
-
-
 
 
 # e.设计(页面架构,针对不同显示用不同单位等)
