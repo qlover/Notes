@@ -876,13 +876,34 @@ SEO (搜索引擎优化) 是一种让网站在搜索引擎结果中更加清晰,
 	- 如果只配置一个文件时使用 `index.html`
 	- HTML 完整后缀 `.html`
 
-# 布局(居中,自适应,响应式,流式,浮动,定位...)
 
-# 元素(block,inline,inline-block,table-cell,flex...)
+# 样式(CSS规范,CSS2.0,盒子模型,书写规范,CSS3,兼容性,布局实现,页面实现,重用性高)
+
 
 # 元数据(head,title,meta,a,link...)
 
-# 样式(CSS规范,CSS2.0,盒子模型,书写规范,CSS3,兼容性,布局实现,页面实现,重用性高)
+## meta 
+
+
+## HTML 全局属性
+
+1. id: id元素给元素分配一个唯一标识符，一个页面只能出现一次同一个id名称
+2. class: class属性用来给元素归类，通过对文档中某一个或多个元素同时设置CSS 样式
+3. accessKey: 快捷键操作，`&lt;input  type = "text"   name = "user"   accesskey = "n"&gt;`
+4. contenteditable:  让文本处于可编辑状态，设置true则可以编辑`&lt;p  contenteditable = "true"&gt;我是一段可修改的文字&lt;/p&gt;`
+5. dir: 设置文本对齐方式，从左到右（ltr），从右到左（rtl）
+6. hidden: 隐藏元素
+7. lang: 设置局部语言
+8. title: 对元素的内容进行额外的提示
+9. tabindex: 表单中按下tab键，实现获取焦点的顺序，如果是-1，则不会被选中
+10. style:  设置元素行内CSS样式
+
+# 元素(block,inline,inline-block,table-cell,flex...)
+
+
+# 布局(居中,自适应,响应式,流式,浮动,定位...)
+
+
 
 # 脚本
 
