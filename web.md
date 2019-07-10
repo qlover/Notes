@@ -1020,36 +1020,25 @@ CSS 则会针对不同设备中显示出差异，是因为浏览器会用使用 
 
 每英寸像素取值，更确切的说法应该是像素密度，也就是衡量单位物理面积内拥有像素值的情况
 
-`PPI = dp/di = V (wp*wp + hp*hp) / di`
-dp: 屏幕对角线分辨率
-wp: 屏幕横向分辨率
-hp: 屏幕纵向分辨率
-di: 屏幕对角线长度(单位 in)
+	`PPI = dp/di = V (wp*wp + hp*hp) / di`
+	
+- dp: 屏幕对角线分辨率
+- wp: 屏幕横向分辨率
+- hp: 屏幕纵向分辨率
+- di: 屏幕对角线长度(单位 in)
 
 
 ### 小结
 
 - 屏幕尺寸：指的是屏幕对角线的长度
-
 - 分辨率：是指宽度上和高度上最多能显示的物理像素点个数
-
 - 点距：像素与像素之间的距离，点距和屏幕尺寸决定了分辨率大小
-
 - PPI:屏幕像素密度，即每英寸(1英寸=2.54厘米)聚集的像素点个数，这里的一英寸还是对角线长度
-
 - DPI:每英寸像素点，印刷行业术语。对于电脑屏幕而言和PPI是一个意思
-
 - 设备像素(又称为物理像素): 指设备能控制显示的最小物理单位，意指显示器上一个个的点。从屏幕在工厂生产出的那天起，它上面设备像素点就固定不变了，和屏幕尺寸大小有关，单位 pt。
-
 - 设备独立像素(也叫密度无关像素或逻辑像素)：可以认为是计算机坐标系统中得一个点，这个点代表一个可以由程序使用的虚拟像素(比如: css像素)，这个点是没有固定下小的，越小越清晰，然后由相关系统转换为物理像素。
-
 - css像素(也叫虚拟像素)：指的是 CSS 样式代码中使用的逻辑像素，在 CSS 规范中，长度单位可以分为两类，绝对(absolute)单位以及相对(relative)单位。px 是一个相对单位，相对的是设备像素(device pixel)
-
 - DPR(设备像素比)：设备像素比 = 设备像素 / 设备独立像素
- 
-
-
-
 
 # 样式(CSS规范,CSS2.0,盒子模型,书写规范,CSS3,兼容性,布局实现,页面实现,重用性高)
 
@@ -1137,4 +1126,12 @@ https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta
 https://www.runoob.com/w3cnote/viewport-deep-understanding.html
 https://blog.csdn.net/lianfengzhidie/article/details/86663715
 https://www.cnblogs.com/zaoa/p/8630393.html
+about px:
+https://www.cnblogs.com/yesyes/p/7638607.html
+https://www.imooc.com/article/75237
+https://www.cnblogs.com/zaoa/p/8630393.html
+https://blog.csdn.net/lianfengzhidie/article/details/86663715
+https://www.cnblogs.com/2050/p/3877280.html
+https://www.cnblogs.com/zdz8207/p/vue-pt-px-750.html
+
 
