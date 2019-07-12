@@ -876,6 +876,42 @@ SEO (搜索引擎优化) 是一种让网站在搜索引擎结果中更加清晰,
 	- 如果只配置一个文件时使用 `index.html`
 	- HTML 完整后缀 `.html`
 
+
+## Doctype
+
+声明在文档的第一行,位于 `<html>` 标签之前,指示浏览器用那个 HTML 版本进行解析
+
++ 标准模式
+	- 文档的 `<!doctype XXX>` 存在并且形式正确
+	- 盒模型实际宽度为 width + padding-left + padding-right + border-left-width + border-right-width
++ 混杂模式
+	- 文档的 `<!doctype XXX>` 不存在或者形式不正确
+	- 盒模型实际宽度为 css width, 如果没有没有 overflow 的情况下,若盒子内容、内边距、或是边框的值较大，会把盒子撑开，实际宽度和高度则大于设定值
+
+### 影响 css 的情况
+
+主要是IE浏览器，其他Chrome，FF以及IE高版本浏览器无论在什么模式下都能正常显示
+
+1. 盒模型是混杂模式和标准模式的主要区别
+<=IE6将盒子的padding和border算到盒子尺寸中，这被称为IE盒模型。
+W3C标准的盒模型中，box大小就是content大小。
+这一区别将导致页面绘制时所有块级元素都出现很大差别，所以两种不同的文档模式下的页面也区别很大。
+2. 影响图片元素的垂直对齐方式，就是在行框对基线的选择，IE的怪异模式会以Bottom-line为基线，标准模式下以base-line为基线。
+3. 影响table元素继承字体的某些属性，在IE5的怪异模式下不会继元素的一部分属性，尤其是font-size属性。
+4. IE5怪异模式中内联元素可以定义尺寸
+5. IE标准模式下，overflow取值为visible即溢出可见，在怪异模式下该溢出会被当作扩展box来对待，元素的大小由其内容决定，溢出不会被裁剪，而是父元素会自动调整自己的宽高以完全适应包含内容。
+
+### 影响 JavaScript 情况
+
+跨浏览器确定一个窗口大小不是一件简单事，注意以下介绍的属性获取后的值都是整数而且没单位，即使是小数浏览器计算时也会四舍五入。
+IE9+，FF，Safari，Opera，Chrome均为此提供四个属性：innerWidth，innerHeight，outerWidth，outerHeight。
+
+1. FF 标准模式表现下正常，混杂模式下 `document.body` 计算值正确，但document.documentElement计算有误
+2. 但在IE6中这些属性必须在标准模式下才有效
+3. 标准模式下 Chrome, 要优先选择 `document.documentElement` 计算视口,混杂模式下的Chrome，无论通过document.documentElement还是document.body中的clientWidth和clientHeight属性都可取得视口大小
+
+
+
 # 元数据(head,title,meta,a,link...)
 
 
@@ -1027,9 +1063,81 @@ CSS 则会针对不同设备中显示出差异，是因为浏览器会用使用 
 - hp: 屏幕纵向分辨率
 - di: 屏幕对角线长度(单位 in)
 
+## viewport 
+
+viewport 就是用来显示网页的那一块区域
+
+在桌面浏览器中css的1个像素往往都是对应着电脑屏幕的1个物理像素，这可能会造成我们的一个错觉，那就是css中的像素就是设备的物理像素
+
+但实际情况却并非如此，css中的像素只是一个抽象的单位，在不同的设备或不同的环境中，css中的1px所代表的设备物理像素是不同的
+
+在iphone3上，一个css像素确实是等于一个屏幕物理像素
+
+后来技术的发展，移动设备的屏幕像素密度越来越高，从 iphon4 开始，`Retina` 屏,分辨率提高了一倍，变成了 `640x960`, 但是屏幕的尺寸并没有变化,这就是同样大小的屏幕上像素就多了一倍,而在这个时候,一个CSS 像素就等于两个物理像素
+
+改变 1CSS 像素的原因
+
+1. 技术进步,`Retina` 屏幕出现,导致同样大小屏幕却有更加高的像素密度, 1个CSS 像素就会是两个物理像素
+2. 用户的缩放,用户的缩放操作会将 1css 像素变大一倍,而缩小也是
+
+浏览器上的三种 viewport
+
+1. layout viewport
+	- 浏览器中可以显示出网页全部内容的区域, 可用 `document.documentElement.clientWidth` 来获取
+	- 移动设备默认为 layout viewport
+	*Android 2, Oprea mini 和 UC 8中无法正确获取*
+2. visual viewport 
+	- 表示浏览器的可视区大小
+	- `window.innerWidth` 获取
+3. ideal viewport
+	- 移动设备理想 viewport
+	- 这个就是将显示在不同设备展示的一致方式
+	- 是最适合移动设备的viewport，ideal viewport的宽度等于移动设备的屏幕宽度
+	- 只要在css中把某一元素的宽度设为ideal viewport的宽度(单位用px)，那么这个元素的宽度就是设备屏幕的宽度了，也就是宽度为100%的效果
+	*针对不同的设备,[这上面](http://viewportsizes.com/)给出了相差参数可以查看*
+
+
+
+## meta 对 viewport 控制
+
+移动端上的 viewport 默认是 layout viewport, 解决方案
+
+```HTML
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+```
+将 viewport 的宽度等于设备宽度,同时不允许用户缩放
+
+width=device-width 直接就可以将 viewport 设置为 ideal viewport
+initial-scale 相对于 ideal viewport 缩放的, 当 ideal viewport 缩放为 100% 也就是为 1 时,此时也可以将 viewport 设置为 ideal viewport 
+*两个都写上是为了兼容性更好*
+
+meta viewport 标签首先是由苹果公司在其safari浏览器中引入的，目的就是解决移动设备的viewport问题。后来安卓以及各大浏览器厂商也都纷纷效仿，引入对meta viewport的支持，事实也证明这个东西还是非常有用的
+
+viewport content 内容属性值
+
+- width: layout viewport 的宽度,正整数||'width-device'
+- initial-scale: 初始缩放值,浮点数
+- minimum-scale: 最小缩放,浮点数
+- maximum-scale: 最大缩放,浮点数
+- height layout: viewport 高度
+- user-scalable:是否允许缩放, no || yes(默认)
+- target-densitydpi(已废弃):安卓私有属性,决定 1css像素占用多少物理像素, 数值 || high-dpi 、 medium-dpi、 low-dpi、 device-dpi(1:1)
+*属性可多个,之间有逗号隔开*
+
+initial-scale 默认值肯定不为1,给出两个公式方便计算
+
+```
+visual viewport宽度 = ideal viewport宽度  / 当前缩放值
+当前缩放值 = ideal viewport宽度  / visual viewport宽度
+```
+*在iphone和ipad上，无论你给viewport设的宽的是多少，如果没有指定默认的缩放值，则iphone和ipad会自动计算这个缩放值，以达到当前页面不会出现横向滚动条(或者说viewport的宽度就是屏幕的宽度)的目的*
+
+也可以利用 css 的 `@viewport` 控制 viewport 
 
 ### 小结
 
+- 如果页面不设置 viewport, 那么移动设备上浏览器默认的宽度值为800px，980px，1024px等这些(单位为 css像素)
+- 每个移动设备浏览器中都有一个理想的宽度，这个理想的宽度是指css中的宽度，跟设备的物理宽度没有关系，在css中，这个宽度就相当于100%的所代表的那个宽度。我们可以用 meta 标签把 viewport 的宽度设为那个理想的宽度，如果不知道这个设备的理想宽度是多少，那么用 `device-width`这个特殊值就行了，同时`initial-scale=1`也有把 viewport 的宽度设为理想宽度的作用
 - 屏幕尺寸：指的是屏幕对角线的长度
 - 分辨率：是指宽度上和高度上最多能显示的物理像素点个数
 - 点距：像素与像素之间的距离，点距和屏幕尺寸决定了分辨率大小
