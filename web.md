@@ -914,6 +914,18 @@ IE9+，FF，Safari，Opera，Chrome均为此提供四个属性：innerWidth，in
 
 # 元数据(head,title,meta,a,link...)
 
+## HTML 全局属性
+
+1. id: id元素给元素分配一个唯一标识符，一个页面只能出现一次同一个id名称
+2. class: class属性用来给元素归类，通过对文档中某一个或多个元素同时设置CSS 样式
+3. accessKey: 快捷键操作，`&lt;input  type = "text"   name = "user"   accesskey = "n"&gt;`
+4. contenteditable:  让文本处于可编辑状态，设置true则可以编辑`&lt;p  contenteditable = "true"&gt;我是一段可修改的文字&lt;/p&gt;`
+5. dir: 设置文本对齐方式，从左到右（ltr），从右到左（rtl）
+6. hidden: 隐藏元素
+7. lang: 设置局部语言
+8. title: 对元素的内容进行额外的提示
+9. tabindex: 表单中按下tab键，实现获取焦点的顺序，如果是-1，则不会被选中
+10. style:  设置元素行内CSS样式
 
 ## meta
 
@@ -1151,32 +1163,92 @@ visual viewport宽度 = ideal viewport宽度  / 当前缩放值
 # 样式(CSS规范,CSS2.0,盒子模型,书写规范,CSS3,兼容性,布局实现,页面实现,重用性高)
 
 
-## CSS 值与单位
+## 层叠和继承
 
-+ 数值
+CSS 样式来源：
 
-+ 单位 
+- 创作人员:link, style, style:(style 元素)
+- 读者:页面中会提供一些让用户自定义字体大小颜色等的快捷键
+- 代理:浏览器
 
-+ 颜色
++ 层叠
+	1. 重要性(Importance)
+		- `!important` 语法可以优先于其他规则,该语法会改变样式层叠的正常工作
+		- 重载 `!important` 的唯一方法是在`当前后面规则` 或者是有`更高专用性`的规则中添加 `!important`
+		+ 语法冲突时适用顺序
+			1. 代理样式声明
+			2. 读者普通声明
+			3. 创作普通声明(link, style, style:)
+			4. 创作重要声明
+			5. 用户样式重要声明
+	2. 专用性(Specificity)
+		- 专用性基本上是衡量选择器的具体程度的一种方法,也就是`选择器优先级`
+		+ 专用性衡量
+			1. style: -> 1000
+			2. ID->100
+			3. class || attr(属性选择器) || psdudo class(伪类)->10
+			4. element->1
+			5. * + > ! '' :not->0
+		+ 计算规则
+			- !important>style:>id>class>element>通配符>inherit>default
+			- 选择器中出现一个加 1 分
+			- 多个选择器具有相同的重要性和专用性,则按照书写顺序
+	3. 书写顺序(Source order)
+		- 如果出现重要性与专用性一致,则就看最后一个因素,书写在后面的更优先
+	
+	- 这些层叠只在作用于元素的属性之上,该条规则并没有参与
+
++ 继承
+	- inherit:显示指定属性继承至父元素
+	- initial:显示指定属性与 defalut 一致,如果 default 认样式表中没有设置值,并且该属性是自然继承的,那么该属性值就被设置为 inherit *IE 不支持*
+	- unset: 重置为其自然值,即如果属性是自然继承的，那么它就表现得像 inherit，否则就是表现得像 initial 
+	- revert: 设置成自定义样式所定义的属性(如果被设置),否则属性值被设置成 defalut,*IE 不支持*
+	+ all 属性可以控制每一个元素的继承性,属性值为以上 4 个
+		-  `unicode-bidi` 与 `direction` 除外
+
+## 盒模型
+
++ 盒属性
+	- margin: 外边塌陷(margin collapsing),也叫外边距折叠,当两个盒子相接触,边距取最大值
+	- border
+	- padding
+	- width && height: 内容框宽度与高度,以及子元素的框大小(全部大小)
+	- *width + padding-right + paddig-left + border-right + border-left 之和是盒模型实际宽度*
+
++ 盒要点
+	- `background-color` && `background-image` 默认到 border 外边缘,该行为可以用 `background-clip` 改变
+	+ overflow 如果实际内容比 content box 大,将会溢出出现滚动条
+		- auto
+		- hidden
+		- visible 默认
+	- height 是不遵守百分比的高度,高度始终取决于内容高度,除非父元素是绝对高度
+	- border 也不遵守百分比
+	- box-sizing 可以用来调整盒模型
+	- outline 不包括在内
+
++ 三种盒类型
+	- block box
+	- inline box
+	- inline-block box
+
++ 两种盒子模型
+	- content-box (默认值,标准), width 不包括 padding 和 border	
+	- border-box width 包括 padding 和 border
+
+### 兼容性
+
+一旦为页面设置了恰当的 DTD，大多数浏览器都会按照上面的图示来呈现内容。然而 IE 5 和 6 的呈现却是不正确的。
+
+W3C 的规范盒子模型是为 content-box 但 IE5.X 和 6 在`怪异模式`中使用自己的非标准模型可以理解为 border-box
+
+虽然有方法解决这个问题。但是目前最好的解决方案是回避这个问题。
+
+*不要给元素添加具有指定宽度的内边距，而是尝试将内边距或外边距添加到元素的父元素和子元素。*
+
+解决IE8及更早版本不兼容问题可以在HTML页面声明 `<!DOCTYPE html>` 即可
 
 
 
-
-## meta 
-
-
-## HTML 全局属性
-
-1. id: id元素给元素分配一个唯一标识符，一个页面只能出现一次同一个id名称
-2. class: class属性用来给元素归类，通过对文档中某一个或多个元素同时设置CSS 样式
-3. accessKey: 快捷键操作，`&lt;input  type = "text"   name = "user"   accesskey = "n"&gt;`
-4. contenteditable:  让文本处于可编辑状态，设置true则可以编辑`&lt;p  contenteditable = "true"&gt;我是一段可修改的文字&lt;/p&gt;`
-5. dir: 设置文本对齐方式，从左到右（ltr），从右到左（rtl）
-6. hidden: 隐藏元素
-7. lang: 设置局部语言
-8. title: 对元素的内容进行额外的提示
-9. tabindex: 表单中按下tab键，实现获取焦点的顺序，如果是-1，则不会被选中
-10. style:  设置元素行内CSS样式
 
 # 元素(block,inline,inline-block,table-cell,flex...)
 
