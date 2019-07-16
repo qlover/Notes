@@ -918,8 +918,8 @@ IE9+，FF，Safari，Opera，Chrome均为此提供四个属性：innerWidth，in
 
 1. id: id元素给元素分配一个唯一标识符，一个页面只能出现一次同一个id名称
 2. class: class属性用来给元素归类，通过对文档中某一个或多个元素同时设置CSS 样式
-3. accessKey: 快捷键操作，`&lt;input  type = "text"   name = "user"   accesskey = "n"&gt;`
-4. contenteditable:  让文本处于可编辑状态，设置true则可以编辑`&lt;p  contenteditable = "true"&gt;我是一段可修改的文字&lt;/p&gt;`
+3. accessKey: 快捷键操作，`<input  type = "text"   name = "user"   accesskey = "n">`
+4. contenteditable:  让文本处于可编辑状态，设置true则可以编辑`<p  contenteditable = "true">我是一段可修改的文字</p>`
 5. dir: 设置文本对齐方式，从左到右（ltr），从右到左（rtl）
 6. hidden: 隐藏元素
 7. lang: 设置局部语言
@@ -1188,7 +1188,7 @@ CSS 样式来源：
 			2. ID->100
 			3. class || attr(属性选择器) || psdudo class(伪类)->10
 			4. element->1
-			5. * + > ! '' :not->0
+			5. `*` `+` `>` `!` `''` `:not`->0
 		+ 计算规则
 			- !important>style:>id>class>element>通配符>inherit>default
 			- 选择器中出现一个加 1 分
