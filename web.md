@@ -1184,9 +1184,11 @@ visual viewport宽度 = ideal viewport宽度  / 当前缩放值
 
 CSS 样式来源：
 
-- 创作人员:link, style, style:(style 元素)
+- 创作人员:link(外部引用) < style(style 元素) < style:(style 元素)
 - 读者:页面中会提供一些让用户自定义字体大小颜色等的快捷键
 - 代理:浏览器
+
+CSS的层叠&&继承
 
 + 层叠
 	1. 重要性(Importance)
@@ -1265,13 +1267,59 @@ W3C 的规范盒子模型是为 content-box 但 IE5.X 和 6 在`怪异模式`中
 
 解决IE8及更早版本不兼容问题可以在HTML页面声明 `<!DOCTYPE html>` 即可
 
+## CSSDOM(CSS 对象模型)
 
 
+## CSS 解析
 
-# 元素(block,inline,inline-block,table-cell,flex...)
++ 优先级
+	1. id选择器`#myid`
+	2. 类选择器`.myclassname`
+	3. 标签选择器`div,h1,p`
+	4. 相邻选择器`h1+p`
+	5. 子选择器`ul > li`
+	6. 后代选择器`li a`
+	7. 通配符选择器`*`
+	8. 属性选择器`a[rel="external"]`
+	9. 伪类选择器`a:hover, li:nth-child`
+	- 最常用的选择器是类选择器。
+	- li、td、dd等经常大量连续出现，并且样式相同或者相类似的标签，我们采用类选择器跟标签名选择器结合的后代选择器 .xx li/td/dd {} 的方式选择。
+	- 极少的情况下会用ID选择器，当然很多前端开发人员喜欢header，footer，banner，conntent设置成ID选择器的，因为相同的样式在一个页面里不可能有第二次。
 
++ 解析(CSSOM)
+	- 获取: CSS 解析器获取页面中 CSS, 可以是 link, style, style:
+	+ 解析规则(解析CSS选择器用于生成浏览器可绘制的 CSS 数据结构)
+		- 从右向左解析,如 sizzle 选择器引擎
+		- CSS 解析完毕后,需要将解析的结果与 DOM Tree 的内容一起进行分析建立一棵 Render Tree,最终用来进行浏览器 `paint`
+	+ 生成 CSS 数据结构
+		- `margin: 10px;` 生成 `margin-top: 10px; margin-right: 10px; margin-bottom:10px; margin-left: 10px; `,也就是将属性都转换成普通属性写法
+		- 计算属性单位值变成页面上的绝对单位值, `getComputedStyle() 可获取计算属性`
+		- 级联(层叠样式) CSS 样式来源可以是多个,所以解析器用样式计算规则,取优先级最高的那个属性值,并层叠其它样式
+		- 然后用样式表来源规则排序 style: > style > link, 得到最后的样式
+	+ 构建 CSSOM 与 DOM Tree 一起 paint
+		
++ 性能提升(减少浏览器 style 查找)
+	1. 避免使用通用选择器
+	2. 避免使用标签或 class 选择器限制 id 选择器
+	3. 避免使用标签限制 class 选择器
+	4. 避免使用多层标签选择器。使用 class 选择器替换，减少css查找
+	5. 避免使用子选择器
+	6. 使用继承
+	7. 不必要的样式,避免给某些有默认样式的元素再赋同样的样式,(`img,input,button{vertical-align:baseline;}`)
+
+### 小结
+1. 在现代浏览器中大多数的选择器速度都非常快,因此使用不同的选择器来优化性能是没有必要的
+2. `过度使用`的样式与`从未使用`的样式所占比例比`选择任何选择器`消耗的性能更多.所以将CSS库进行拆分,那可能是更好的选择;
+3. 如果你的CSS库由多人编写,那么可以使用`UnCSS`这样的工具来自动删除未被使用的样式;
+4. 明智的使用花括号内的属性才能赢的性能上的收益.在优化时,首先寻找”昂贵”的样式,会为你和用户带来最大的收益
 
 # 布局(居中,自适应,响应式,流式,浮动,定位...)
+
+
+
+
+## 定位--display
+
 
 
 
