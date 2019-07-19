@@ -1248,9 +1248,10 @@ CSS 样式来源：
 	- inline box
 	- inline-block box
 
-+ 两种盒子模型
++ 三种盒子模型
 	- content-box (默认值,标准), width 不包括 padding 和 border	
 	- border-box width 包括 padding 和 border
+	- padding-box`css3` width 只包括 padding
 
 ### 兼容性
 
