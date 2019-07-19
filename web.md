@@ -1313,8 +1313,25 @@ W3C 的规范盒子模型是为 content-box 但 IE5.X 和 6 在`怪异模式`中
 3. 如果你的CSS库由多人编写,那么可以使用`UnCSS`这样的工具来自动删除未被使用的样式;
 4. 明智的使用花括号内的属性才能赢的性能上的收益.在优化时,首先寻找”昂贵”的样式,会为你和用户带来最大的收益
 
-# 布局(居中,自适应,响应式,流式,浮动,定位...)
+# Format Contex (格式化上下文)(居中,自适应,响应式,流式,浮动,定位...)
 
+页面布局由盒子模型组成, DOM Tree 包含多个或 0 个盒子,每个盒子有它的宽度与高度
+
+*布局是在盒子模型基础上完成的*
+
+## display
+
+### display 取值
+- 基本值：    none | inline | block | list-item | inline-block 
+- table系列： table | inline-table | table-caption | table-cell | table-row | table-row-group | table-column | table-columen-group | table-footer-group | table-header-group
+- css3新增： box | inline-box | flexbox | inline-flexbox | flex | inline-flex | run-in
+
+
+## position 
+
+## float
+
+## multi-colum 
 
 
 
