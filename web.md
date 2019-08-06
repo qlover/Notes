@@ -1313,31 +1313,188 @@ W3C 的规范盒子模型是为 content-box 但 IE5.X 和 6 在`怪异模式`中
 3. 如果你的CSS库由多人编写,那么可以使用`UnCSS`这样的工具来自动删除未被使用的样式;
 4. 明智的使用花括号内的属性才能赢的性能上的收益.在优化时,首先寻找”昂贵”的样式,会为你和用户带来最大的收益
 
-# Format Contex (格式化上下文)(居中,自适应,响应式,流式,浮动,定位...)
+# 可视化格式化模型(Visual formatting model)
 
 页面布局由盒子模型组成, DOM Tree 包含多个或 0 个盒子,每个盒子有它的宽度与高度
 
 *布局是在盒子模型基础上完成的*
+## 元素
++ 块级
+	+ 块级元素
+		- 通俗说法就是独占一行
+		- 块级元素是源文档中会被视觉格式化为块状（例：段落）的元素
+		- display 属性为 block | list-item | table 的元素就会成为一个`块级元素`
+	+ 块级盒子
+		- 块级元素生成一个`块级盒`
+		- 块级盒子生成 `BFC`
+	+ 匿名块盒
+		- 一段不被任何元素包含的文本元素[匿名块盒](https://www.w3.org/TR/CSS2/visuren.html#anonymous-block-level)
+	+ 块级容器
+		- 只包含块级盒子
+		- IFC 只包含行内级盒子
+		- 不可替换行内块
+		- 不替换的表格单元格
++ 行内级
+	+ 行内元素
+		- 行内级元素是在源文档中那些不为其内容形成新的块、其内容分布在多行中的元素
+		- display 属性为 inline | inline-table | inline-block	
+	+ 行内盒
+		- `inline` 的不可替换元素
+		- 行内级元素生成行内级盒
+		- 块级盒子生成 `IFC`
+	+ 原子行内级盒
+		- inline 的可替换元素 | inline-block | inline-table
+	+ 匿名行内盒
+		- 同匿名块盒,不被任何行内级元素包含的文本元素
+		- 空白内容，根据 white-space 属性
+		- 如果可被折叠则不会产生任何匿名行内盒
++ display
+	- block 产生一个块盒
+	- inline-block 产生一个行内级块容器。行内块的内部会被当作块盒来格式化，而此元素本身会被当作原子行内级盒来格式化
+	- inline 产生一个或多个的行内框
+	- list-item 产生一个主块框或标记框(principal block box and marker box)
 
-## display
+## 格式上下文
 
-### display 取值
-- 基本值：    none | inline | block | list-item | inline-block 
-- table系列： table | inline-table | table-caption | table-cell | table-row | table-row-group | table-column | table-columen-group | table-footer-group | table-header-group
-- css3新增： box | inline-box | flexbox | inline-flexbox | flex | inline-flex | run-in
++ 块格式上下文(Block formatting contexts)
+	- 指页面中的一个渲染区域，并且拥有一套渲染规则，他决定了其子元素如何定位，以及与其他元素的相互关系和作用
+	- *块级格式化上下文并不是 display 属性值为 block,是块级盒子的布局过程发生的区域，也是浮动元素与其他元素交互的区域*
+	- 一个 BFC 可以看作一个迷你布局,可以将任何子元素包括进去,其脱离文档流肯定就能产生 BFC
+	- html 根节点就是典型的一个 BFC 也是页面中默认的第一个 BFC，页面中可以用满足以上的创建条件生成多个新的 BFC
+	+ 创建条件
+		1. 根元素 `html`
+		2. 浮动元素（元素的 float 不是 none）
+		3. 绝对定位元素（元素的 position 为 absolute 或 fixed）
+		4. 行内块元素（元素的 display 为 inline-block）
+		5. 表格单元格（元素的 display为 table-cell，HTML表格单元格默认为该值）
+		6. 表格标题（元素的 display 为 table-caption，HTML表格标题默认为该值）
+		7. 匿名表格单元格元素（元素的 display为 table、table-row、 table-row-group、table-header-group、table-footer-group（分别是HTML table、row、tbody、thead、tfoot的默认属性）或 inline-table）
+		8. overflow 值不为 visible 的块元素
+		9. display 值为 flow-root 的元素
+		10. contain 值为 layout、content或 paint 的元素
+		11. 弹性元素（display为 flex 或 inline-flex元素的直接子元素）
+		12. 网格元素（display为 grid 或 inline-grid 元素的直接子元素）
+		13. 多列容器（元素的 column-count 或 column-width 不为 auto，包括 column-count 为 1）
+		14. column-span 为 all 的元素始终会创建一个新的BFC，即使该元素没有包裹在一个多列容器中（标准变更，Chrome bug）
+
+	+ 特性
+		1. 解决外边距折叠
+		2. 浮动清除, clear: both; 另一种方案
+
+```
+<style>
+.parent { border: 1px solid #f00; }
+.bfc { overflow: hidden; }
+.box1 { width: 200px; height: 200px; background: pink; }
+.box2 { width: 100px; height: 100px; background: lightgreen; }
+.f_l { float: left; }
+.margin20 { margin: 20px; }
+</style>
+
+<p>html根节点默认是一个BFC，&lt;div style="overflow: hidden;"&gt;&lt;/div&gt;生成多个新的BFC</p>
+<p>div1先生成新的BFC，然后div2在根节点的BFC中排列</p>
+<div class="parent bfc">
+  <div class="f_l box2">div1</div>
+  <div class="box1">div2</div>
+</div>
+<p>div2先在根节点的BFC中排列，然后div1生成新的BFC</p>
+<div class="parent bfc">
+  <div class="box1">div2</div>
+  <div class="f_l box2">div1</div>
+</div>
+<p>div1先生成新的BFC，然后div2生成新的BFC</p>
+<div class="parent bfc">
+  <div class="f_l box2">div1</div>
+  <div class="box1 bfc">div2</div>
+</div>
+<p>不触发BFC，margin重叠</p>
+<div class="parent bfc">
+  <div class="box1 margin20">div1</div>
+  <div class="box1 margin20">div2</div>
+</div>
+<p>触发BFC，margin不重叠</p>
+<div class="parent bfc">
+  <div class="box2 margin20">div1</div>
+  <div class="bfc">
+    <div class="box2 margin20">div2</div>
+  </div>
+</div>
+```
+
++ 行内格式化上下文(Inline formatting contexts)
+	+ 创建条件 
+		1. 块盒中有行内级元素
+	+ 特性
+		1. 子元素水平方向横向排列，并且垂直方向起点为元素顶部
+		2. 子元素只会计算水平盒模型属性垂直并不会(padding,width,border)
+		3. `vertical-align` 决定垂直方向上的对方方式
+		4. 行框的宽度是由包含块和与其中的浮动来决定, 可以出现一行或多行
+		5. 行框一般左右边贴紧其包含块，但 float 元素会优先排列
+		6. 行框高度由 CSS 行高计算规则来确定，同个IFC下的多个行框高度可能会不同
+		7. 行内级盒的总宽度少于包含它们的行框时，`text-align` 决定水平对齐方式
+		8. 当一个行框超过父元素的宽度时 `word-wrap` 决定换行方式
 
 
-## position 
+margin-top margin-bottom 不生效:
+```
+<style>
+.warp { border: 1px solid red; display: inline-block; }
+.text { margin: 20px; background: green; }
+</style>
+<div class="warp">
+  <span class="text">文本一</span>
+  <span class="text">文本二</span>
+</div>
+```
 
-## float
+浮动元素优先排列:
+```
+<style>
+.warp { border: 1px solid red; width: 200px; }
+.text { background: green; }
+.f-l { float: left; }
+</style>
+<div class="warp">
+    <span class="text">这是文本1</span>
+    <span class="text">这是文本2</span>
+    <span class="text f-l">这是文本3</span> <!-- 强制优先第二排排列 -->
+    <span class="text">这是文本4</span>
+</div>
+```
 
-## multi-colum 
+IFC 高度由最高的行内元素决定:
+```
+<style>
+.warp { border: 1px solid red; display: inline-block; }
+.text { background: green; }
+.h1 { line-height: 10px;}
+.h2 { line-height: 20px;}
+.h3 { line-height: 30px;}
+.h4 { line-height: 40px;}
+</style>
+<div class="warp">
+    <span class="text h1">这是文本1</span>
+    <span class="text h2">这是文本2</span>
+    <span class="text h3">这是文本3</span>
+    <span class="text h4">这是文本4</span>
+</div>
+```
 
-
-
-## 定位--display
-
-
+行内元素盒模型与其行内元素容器垂直对齐:
+```
+<style>
+.warp { border: 1px solid red; display: inline-block;}
+.text { background: green; }
+.warp img{ vertical-align: middle; }
+</style>
+<div class="warp">
+  <span class="text">这是文本1</span>
+  <img src="https://www.w3school.com.cn/i/eg_cute.gif">
+  <span class="text">这是文本2</span>
+  <span class="text">这是文本3</span>
+  <span class="text">这是文本4</span>
+</div>
+```
 
 
 # 脚本
