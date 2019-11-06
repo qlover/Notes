@@ -1503,6 +1503,208 @@ IFC 高度由最高的行内元素决定:
 
 # JavaScript 基础(作用域/作用域链,运算符,nudefind&null,变量对象,提升,底层兼容(事件...))
 
+## 作用域
+
+作用域是指程序源代码中定义变量的区域。
+
+作用域规定了如何查找变量，也就是确定当前执行代码对变量的访问权限。
+
+JavaScript 采用词法作用域(lexical scoping)，也就是静态作用域。
+
++ 词法作用域(静态作用域)
+  - 函数的作用域在函数定义的时候就决定了。
++ 动态作用域
+  - 作用域在函数被调用的时候才决定。
+
+```js
+var value = 1;
+function foo() {
+  console.log(value);
+}
+function bar() {
+  var value = 2;
+  foo();
+}
+bar(); // 1
+```
+### 作用域链
+
+当查找变量的时候，会先从当前上下文的变量对象中查找，如果没有找到，就会从父级(词法层面上的父级)执行上下文的变量对象中查找，一直找到全局上下文的变量对象，也就是全局对象。
+
+这样由多个执行上下文的变量对象构成的链表就叫做作用域链。
+
+函数的作用域在函数定义的时候就决定了。
++ 函数创建
+  - 函数有一个内部属性 `[[scope]]`，当函数创建的时候，就会保存所有父变量对象到其中，你可以理解 [[scope]] 就是所有父变量对象的层级链，但是注意：[[scope]] 并不代表完整的作用域链！
+  ```
+  function foo() {
+    function bar() {
+        ...
+    }
+  }
+  // 函数创建时，各自的[[scope]]为：
+  foo.[[scope]] = [
+    globalContext.VO
+  ];
+  bar.[[scope]] = [
+    fooContext.AO,
+    globalContext.VO
+  ];
+  ```
++ 函数激活
+  - 当函数激活时，进入函数上下文，创建 VO/AO 后，就会将活动对象添加到作用链的前端。
+  - 这时候执行上下文的作用域链，我们命名为 Scope：
+  ```Scope = [AO].concat([[Scope]]);```
+
+
+## 执行上下文
+
+当变量提升时：
+```js
+var foo = function () {
+  console.log('foo1');
+}
+foo();  // foo1
+var foo = function () {
+  console.log('foo2');
+}
+foo(); // foo2
+```
+当函数提升时：
+```js
+function foo() {
+  console.log('foo1');
+}
+foo();  // foo2
+function foo() {
+  console.log('foo2');
+}
+foo(); // foo2
+```
+
+JavaScript 的可执行代码(executable code)的类型分三种，全局代码、函数代码、eval代码。
+
+当执行到一个函数的时候，就会进行准备工作，这里的"准备工作"就叫做"执行上下文(execution context)"
+
+当执行一个函数的时候，就会创建一个执行上下文，并且压入执行上下文栈，当函数执行完毕的时候，就会将函数的执行上下文从栈中弹出。
+
+`执行上下文栈(Execution context stack，ECS)`来管理执行上下文
+
+
+## 变量对象(Variable object，VO)
+
+变量对象是与执行上下文相关的数据作用域，存储了在上下文中定义的变量和函数声明。
+
+### 全局对象
+
+1. 可以通过 this 引用，在客户端 JavaScript 中，全局对象就是 Window 对象。
+2. 全局对象是由 Object 构造函数实例化的一个对象。
+3. 预定义了一堆，一大堆函数和属性。
+4. 作为全局变量的宿主。
+5. 客户端 JavaScript 中，全局对象有 window 属性指向自身。
+
+PS:见[W3School](https://www.w3school.com.cn/jsref/jsref_obj_global.asp)
+
+全局函数和属性
+
+- Infinity  代表正的无穷大的数值。
+- java  代表 java.* 包层级的一个 JavaPackage。
+- NaN 指示某个值是不是数字值。
+- Packages  根 JavaPackage 对象。
+- undefined 指示未定义的值。
+- decodeURI() 解码某个编码的 URI。
+- decodeURIComponent()  解码一个编码的 URI 组件。
+- encodeURI() 把字符串编码为 URI。
+- encodeURIComponent()  把字符串编码为 URI 组件。
+- escape()  对字符串进行编码。
+- eval()  计算 JavaScript 字符串，并把它作为脚本代码来执行。
+- getClass()  返回一个 JavaObject 的 JavaClass。
+- isFinite()  检查某个值是否为有穷大的数。
+- isNaN() 检查某个值是否是数字。
+- Number()  把对象的值转换为数字。
+- parseFloat()  解析一个字符串并返回一个浮点数。
+- parseInt()  解析一个字符串并返回一个整数。
+- String()  把对象的值转换为字符串。
+- unescape()  对由 escape() 编码的字符串进行解码。
+
+
+### 活动对象
+
+正如全局对象，当全局环境一产生，全局对象就由此诞生。
+
+在函数上下文中，就用活动对象(activation object, AO)来表示变量对象。
+
+活动对象是在进入函数上下文时刻被创建的，它通过函数的 arguments 属性初始化。arguments 属性值是 Arguments 对象。
+
+
+执行上下文的代码会分成两个阶段进行处理：
++ 分析，当进入执行上下文(这时候还没有执行代码)，变量对象会包括
+  1. 函数的所有形参 (如果是函数上下文)
+    - 由名称和对应值组成的一个变量对象的属性被创建
+    - 没有实参，属性值设为 undefined
+  2. 函数声明
+    - 由名称和对应值（函数对象(function-object)）组成一个变量对象的属性被创建
+    - 如果变量对象已经存在相同名称的属性，则完全替换这个属性
+  3. 变量声明
+    - 由名称和对应值（undefined）组成一个变量对象的属性被创建；
+    - 如果变量名称跟已经声明的形式参数或函数相同，则变量声明不会干扰已经存在的这类属性
++ 执行，代码执行
+  - 在代码执行阶段，会顺序执行代码，根据代码，修改变量对象的值
+
+
+```js
+function foo(a) {
+  var b = 2;
+  function c() {}
+  var d = function() {};
+  b = 3;
+}
+foo(1);
+
+// 在进入上下文后，AO为
+AO = {
+  arguments: {
+    0: 1,
+    length: 1
+  },
+  a: 1,
+  b: undefined,
+  c: reference to function c(){},
+  d: undefined
+}
+// 执行完成后，AO为
+AO = {
+  arguments: {
+    0: 1,
+    length: 1
+  },
+  a: 1,
+  b: 3,
+  c: reference to function c(){},
+  d: reference to FunctionExpression "d"
+}
+```
+
+## undefined & null
+
+*undefined和null在if语句中，都会被自动转为false*
+
++ null 表示"没有对象"，即该处不应该有值
+  1. 作为函数的参数，表示该函数的参数不是对象。
+  2. 作为对象原型链的终点。
++ undefined 表示"缺少值"，就是此处应该有一个值，但是还没有定义
+  1. 变量被声明了，但没有赋值时，就等于undefined。
+  2. 调用函数时，应该提供的参数没有提供，该参数等于undefined。
+  3. 对象没有赋值的属性，该属性的值为undefined。
+  4. 函数没有返回值时，默认返回undefined。
+
+## 变量提升 
+
+- 所有的声明都会提升到作用域的最顶上去。
+- 同一个变量只会声明一次，其他的会被忽略掉或者覆盖掉。
+- 函数声明的优先级高于变量申明的优先级，并且函数声明和函数定义的部分一起被提升。
+
+
 # JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
@@ -1540,20 +1742,23 @@ Commit Message 格式
 <footer>
 ```
 
-https://segmentfault.com/q/1010000000640869
-https://github.com/ljianshu/Blog/issues/51
-https://www.runoob.com/html/html5-syntax.html
-https://www.imooc.com/article/75237
-https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta
-https://www.runoob.com/w3cnote/viewport-deep-understanding.html
-https://blog.csdn.net/lianfengzhidie/article/details/86663715
-https://www.cnblogs.com/zaoa/p/8630393.html
-about px:
-https://www.cnblogs.com/yesyes/p/7638607.html
-https://www.imooc.com/article/75237
-https://www.cnblogs.com/zaoa/p/8630393.html
-https://blog.csdn.net/lianfengzhidie/article/details/86663715
-https://www.cnblogs.com/2050/p/3877280.html
-https://www.cnblogs.com/zdz8207/p/vue-pt-px-750.html
-
+# 参考链接
+- https://segmentfault.com/q/1010000000640869
+- https://github.com/ljianshu/Blog/issues/51
+- https://www.runoob.com/html/html5-syntax.html
+- https://www.imooc.com/article/75237
+- https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta
+- https://www.runoob.com/w3cnote/viewport-deep-understanding.html
+- https://blog.csdn.net/lianfengzhidie/article/details/86663715
+- https://www.cnblogs.com/zaoa/p/8630393.html
+- https://www.cnblogs.com/yesyes/p/7638607.html
+- https://www.imooc.com/article/75237
+- https://www.cnblogs.com/zaoa/p/8630393.html
+- https://blog.csdn.net/lianfengzhidie/article/details/86663715
+- https://www.cnblogs.com/2050/p/3877280.html
+- https://www.cnblogs.com/zdz8207/p/vue-pt-px-750.html
+- https://github.com/mqyqingfeng/Blog
+- http://www.ecma-international.org/ecma-262/6.0/index.html
+- https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/
+- http://es5.github.io/
 
