@@ -1481,7 +1481,7 @@ IFC 高度由最高的行内元素决定:
 ```
 
 行内元素盒模型与其行内元素容器垂直对齐:
-```
+```HTML
 <style>
 .warp { border: 1px solid red; display: inline-block;}
 .text { background: green; }
@@ -1705,6 +1705,144 @@ AO = {
 - 函数声明的优先级高于变量申明的优先级，并且函数声明和函数定义的部分一起被提升。
 
 
+
+## 事件驱动--addEventListener
+
+EventTarget.addEventListener() 方法将指定的监听器注册到 EventTarget 上，当该对象触发指定的事件时，指定的回调函数就会被执行。 事件目标可以是一个文档上的元素 Element,Document 和 Window 或者任何其他支持事件的对象 (比如 XMLHttpRequest)
+
+- 允许给一个事件注册多个监听器。 特别是在使用AJAX库，JavaScript模块，或其他需要第三方库/插件的代码。
+- 提供了一种更精细的手段控制 listener 的触发阶段。（即可以选择捕获或者冒泡）。
+- 对任何 DOM 元素都是有效的，而不仅仅只对 HTML 元素有效。
+
+```javascript
+target.addEventListener(String type, [Function | Object] listener[, options]);
+target.addEventListener(String type, [Function | Object] listener[, useCapture]);
+target.addEventListener(String type, [Function | Object] listener[, useCapture, wantsUntrusted  ]);  // Gecko/Mozilla only
+```
+
+- type 事件类型的字符串。
+- listener 一个回调函数或者是一个实现了 Event 接口的对象
+  *回调时箭头函数时，原函数中可用的变量和常量在事件处理器中同样可用*
++ options  一个指定有关 listener 属性的可选参数对象。可用的选项如下：
+  - capture:  Boolean，表示 listener 会在该类型的事件捕获阶段传播到该 EventTarget 时触发。
+  - once:  Boolean，表示 listener 在添加之后最多只调用一次。如果是 true， listener 会在其被调用之后自动移除。
+  - passive: Boolean，设置为true时，表示 listener 永远不会调用 preventDefault()。如果 listener 仍然调用了这个函数，客户端将会忽略它并抛出一个控制台警告。
+  - mozSystemGroup: 只能在 XBL 或者是 Firefox' chrome 使用，这是个 Boolean，表示 listener 被添加到 system group。
+- useCapture
+
+
+事件监听器可以被指定为回调函数或实现`EventListener`的对象，其`handleEvent()`方法用作回调函数
+
+*回调要么是一个函数要么就是一个实现了 EventListener 的对象里面的 handleEvent() 方法*
+
+回调函数本身具有与 `handleEvent()` 方法相同的参数和返回值;也就是说，回调接受一个参数：一个基于Event 的对象
+
+### 事件原型
+```js
+(function() {
+  if (!Event.prototype.preventDefault) {
+    Event.prototype.preventDefault=function() {
+      this.returnValue=false;
+    };
+  }
+  if (!Event.prototype.stopPropagation) {
+    Event.prototype.stopPropagation=function() {
+      this.cancelBubble=true;
+    };
+  }
+  if (!Element.prototype.addEventListener) {
+    var eventListeners=[];
+    
+    var addEventListener=function(type,listener /*, useCapture (will be ignored) */) {
+      var self=this;
+      var wrapper=function(e) {
+        e.target=e.srcElement;
+        e.currentTarget=self;
+        if (typeof listener.handleEvent != 'undefined') {
+          listener.handleEvent(e);
+        } else {
+          listener.call(self,e);
+        }
+      };
+      if (type=="DOMContentLoaded") {
+        var wrapper2=function(e) {
+          if (document.readyState=="complete") {
+            wrapper(e);
+          }
+        };
+        document.attachEvent("onreadystatechange",wrapper2);
+        eventListeners.push({object:this,type:type,listener:listener,wrapper:wrapper2});
+        
+        if (document.readyState=="complete") {
+          var e=new Event();
+          e.srcElement=window;
+          wrapper2(e);
+        }
+      } else {
+        this.attachEvent("on"+type,wrapper);
+        eventListeners.push({object:this,type:type,listener:listener,wrapper:wrapper});
+      }
+    };
+    var removeEventListener=function(type,listener /*, useCapture (will be ignored) */) {
+      var counter=0;
+      while (counter<eventListeners.length) {
+        var eventListener=eventListeners[counter];
+        if (eventListener.object==this && eventListener.type==type && eventListener.listener==listener) {
+          if (type=="DOMContentLoaded") {
+            this.detachEvent("onreadystatechange",eventListener.wrapper);
+          } else {
+            this.detachEvent("on"+type,eventListener.wrapper);
+          }
+          eventListeners.splice(counter, 1);
+          break;
+        }
+        ++counter;
+      }
+    };
+    Element.prototype.addEventListener=addEventListener;
+    Element.prototype.removeEventListener=removeEventListener;
+    if (HTMLDocument) {
+      HTMLDocument.prototype.addEventListener=addEventListener;
+      HTMLDocument.prototype.removeEventListener=removeEventListener;
+    }
+    if (Window) {
+      Window.prototype.addEventListener=addEventListener;
+      Window.prototype.removeEventListener=removeEventListener;
+    }
+  }
+})();
+```
+
+
+以上来自 (MDN)[https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener]
+
+### jQuery 事件
+
+不得不说 jQuery 中换了一种思维,保留了事件原型中的大部分特性
+
++ $.Event 事件对象
+  - $.Event 与原生 event 相全部得到的一个全新事件对象
++ 事件注册
+  - `on()` 入口，与传统事件绑定不同，可以绑定多个事件并独立执行
+  - 用 $.Callbacks 回调存放,并没每个回调设置标识，可以直接用 `off()` 直接移除
+  - 并且回调也可以是对象
++ 事件执行
+  - 事件触发执行 $.Event
+  - 事件队列里的回调全部执行
++ 抛弃原生捕获和冒泡
+  - 模拟捕获和冒泡
+- 支持自定义事件
+- 手动触发
+
+## 三种对象
+
+- 原生对象：Object、Function、Array、String、Boolean、Number、Date、RegExp、Error、EvalError、RangeError、ReferenceError、SyntaxError、TypeError、URIError、Global
+- 内置对象：Global（全局对象）、Math
+- 宿主对象：有宿主提供的对象，在浏览器中window对象以及其下边所有的子对象(如bom、dom等等)，在node中是globla及其子对象，也包含自定义的类对象。【何为“宿主对象”？  在web中，ECMAScript中的“宿主”当然就是我们网页的运行环境，即“操作系统”和“浏览器”。所有非本地对象都是宿主对象（host object），即由 ECMAScript 实现的宿主环境提供的对象。】
+- 全局对象：一般全局对象会有两个，一个是ecma提供的Global对象，一个是宿主提供。如在浏览器中是window、在nodejs中是global。【所以啊，在浏览器中全局对象是Global+window】
+通常情况下ecma提供的Global对象对是不存在的，没有具体的对象，
+
+
 # JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
@@ -1761,4 +1899,10 @@ Commit Message 格式
 - http://www.ecma-international.org/ecma-262/6.0/index.html
 - https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/
 - http://es5.github.io/
-
+- https://www.runoob.com/w3cnote/html-css-guide.html#css
+- https://www.w3cschool.cn/css/css-selector.html
+- https://blog.csdn.net/m0_37972557/article/details/80370822
+- https://segmentfault.com/a/1190000018717319
+- https://www.w3.org/TR/css-cascade-4/#cascading
+- https://blog.csdn.net/lch1251680944/article/details/87975532
+- https://www.w3.org/TR/CSS2/visuren.html#normal-flow
