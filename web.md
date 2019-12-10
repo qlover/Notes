@@ -593,6 +593,74 @@ Access-Control-Allow-Headers: <field-name>[, <field-name>]*
 
 # JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
 
+## 函数一等公民
+
+JavaScript 中一切皆对象，这是语言层面上的一切皆对象，而代码层面上更像是一切皆函数
+
+回顾一下函数在 JavaScript 中存在的地址
+
+
+```js
+// 1. 函数声明
+function foo(){}
+// 2. 函数表达式
+let foo = function(){}
+// 3. 匿名函数，比如事件处理回调
+$(function(){})
+// 4. 构造函数
+let Parent = function( name, age ){
+  this.name = name;
+  this.age = age;
+}
+// 5. 函数作为参数
+setTimeout(function(){
+  // 匿名函数体内
+}, 100)
+// 6. 函数作为返回参数
+const check = function( reg ){
+  return function( text ){
+    return reg.test(text)
+  }
+}
+const checkNumber = check(/^[0-9]+$/) // 利用 check 返回的函数作为另一个函数给 checkNumber 
+console.log( checkNumber(100) ) // true
+// 同时主里也用到了 curry 
+// 7. es6 之前表示一个作用域
+var scope = 'eee'
+(function(){
+  var scope = 'abc'
+});
+// 8. 自我执行函数，模块化
+( function( global, factory ) {
+  // define
+}( typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
+  // main
+} ) );
+// ...
+```
+
+通常情况下函数调用完成，其内在的所有局部变量和自己都会被垃圾收回自动销毁
+
+### 闭包
+
+闭包是一种保护私有变量的机制，在函数执行时形成私有的作用域，保护里面的私有变量不受外界干扰。
+
+直观的说就是形成一个不销毁的栈环境，让函数或变量可以驻留在内存中,看下面实例
+
+```js
+var regCheck = function( reg ){
+  return function( text ){
+    return reg.test(text)
+  }
+}
+var checkNumber = regCheck(/^[0-9]+$/)
+const checkEmail = regCheck(/^(\d|\w)+\@(\d|\w)+\.(com|cn)$/)
+console.log( checkNumber('123') )  //=> true
+console.log( checkNumber('1d23') ) //=> false
+console.log( checkEmail('12adsf3@sina.com') )  //=> true
+```
+
+
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
 
 # JavaScript 基础(AMD,UMD,ES6,TypeScript(静态),Node.JS(包管理))

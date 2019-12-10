@@ -38,7 +38,12 @@ $ sudo httpd -k restart
         Require all granted
     </Directory>
 </VirtualHost>
+# 可解析php并且把php模块打开
+AddType application/x-httpd-php .php
+DirectoryIndex index.php index.htm index.html
 ```
+$ sudo cp php.ini.default php.ini # 记得打开 php.ini
+
 
 // downlonad php7
 $ curl -s http://php-osx.liip.ch/install.sh | bash -s 7.0
@@ -47,3 +52,5 @@ http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.10-osx10.10-x86_64.dmg
 http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.10-osx10.10-x86_64.dmg
 
 
+
+lsof # 查看端口占用情况
