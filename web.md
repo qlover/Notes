@@ -1834,6 +1834,10 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 - 支持自定义事件
 - 手动触发
 
+
+
+# JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
+
 ## 三种对象
 
 - 原生对象：Object、Function、Array、String、Boolean、Number、Date、RegExp、Error、EvalError、RangeError、ReferenceError、SyntaxError、TypeError、URIError、Global
@@ -1842,15 +1846,11 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 - 全局对象：一般全局对象会有两个，一个是ecma提供的Global对象，一个是宿主提供。如在浏览器中是window、在nodejs中是global。【所以啊，在浏览器中全局对象是Global+window】
 通常情况下ecma提供的Global对象对是不存在的，没有具体的对象，
 
-
-# JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
-
 ## 函数一等公民
 
 JavaScript 中一切皆对象，这是语言层面上的一切皆对象，而代码层面上更像是一切皆函数
 
-回顾一下函数在 JavaScript 中存在的地址
-
+回顾一下函数在 JavaScript 中存在的形式
 
 ```js
 // 1. 函数声明
@@ -1869,12 +1869,12 @@ setTimeout(function(){
   // 匿名函数体内
 }, 100)
 // 6. 函数作为返回参数
-const check = function( reg ){
+var check = function( reg ){
   return function( text ){
     return reg.test(text)
   }
 }
-const checkNumber = check(/^[0-9]+$/) // 利用 check 返回的函数作为另一个函数给 checkNumber 
+var checkNumber = check(/^[0-9]+$/) // 利用 check 返回的函数作为另一个函数给 checkNumber 
 console.log( checkNumber(100) ) // true
 // 同时主里也用到了 curry 
 // 7. es6 之前表示一个作用域
@@ -1888,6 +1888,8 @@ var scope = 'eee'
 }( typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
   // main
 } ) );
+// 9. ES6 新增特性箭头函数
+var foo = args => args + 1
 // ...
 ```
 
@@ -1911,6 +1913,127 @@ console.log( checkNumber('123') )  //=> true
 console.log( checkNumber('1d23') ) //=> false
 console.log( checkEmail('12adsf3@sina.com') )  //=> true
 ```
+这是一个闭包的流行使用方式，柯里化
+
+
+## 从规范了解 this
+
+ECMAScript 的类型分为语言类型和规范类型。
+
++ 语言类型
+  - 语言类型是开发者直接使用 ECMAScript 可以操作的
+  - 也就是熟悉的 Undefined, Null, Boolean, String, Number, 和 Object
++ 规范类型
+  - 用来用算法描述 ECMAScript 语言结构和 ECMAScript 语言类型的
+  - Reference, List, Completion, Property Descriptor, Property Identifier, Lexical Environment, 和 Environment Record
+
+### Reference
+
+规范8.7章中解释 Reference 类型就是用来解释诸如 delete、typeof 以及赋值等操作行为的，Reference 的构成，由三个组成部分，分别是：
+- base value： 属性所在的对象或者就是 `EnvironmentRecord`,它的值只可能是 undefined,Object,Boolean,String,Number,environment record 其中的一种
+- referenced name： 属性的名称
+- strict reference：是否严格引用
+
+一个 base value 可以是一个对象，如下面例子：
+```js
+// 一个用户定义的对象
+var foo = {
+  bar: function () {
+    return this;
+  }
+};
+foo.bar();
+// 对应成规范中的 Reference 就是下面对象所以描述
+var BarReference = {
+  base: foo,
+  propertyName: 'bar',
+  strict: false
+};
+```
+
+规范中获取 Reference 组成部分的方法
+- GetBase(V)。 返回对象属性的具体值,而不再是一个 Reference
+- GetReferencedName(V)。 返回引用值 V 的引用名称组件。
+- IsStrictReference(V)。 返回引用值 V 的严格引用组件。
+- HasPrimitiveBase(V)。 如果基值是 Boolean, String, Number，那么返回 true。
+- IsPropertyReference(V)。 如果基值是个对象或 HasPrimitiveBase(V) 是 true，那么返回 true；否则返回 false。
+- IsUnresolvableReference(V)。 如果基值是 undefined 那么返回 true，否则返回 false。
+
+## MemberExpression 
+
+从字面意思上可以看出成员表达式的意思，但在规范中指出 MemberExpression 可以是以下几种
+- PrimaryExpression  原始表达式
+- FunctionExpression  函数定义表达式
+- MemberExpression [ Expression ]  属性访问表达式
+- MemberExpression . IdentifierName  属性访问表达式
+- new MemberExpression Arguments  对象创建表达式
+
+```js
+function foo(){
+}
+foo() // foo 是 MemberExpression,也就是 ()左边的部分
+```
+
+## 确认 this
+
+规范 11.2.3 第一步，第六步和第七步所述，确认 this 过程如：
+1. 计算 MemberExpression 表达式的结果赋值给 ref
+2. 判断 ref 是不是一个 Reference
+  1. 如果 ref 是 Reference，并且 IsPropertyReference(ref) 是 true, 那么 this 的值为 GetBase(ref)
+  2. 如果 ref 是 Reference，并且 base value 值是 Environment Record, 那么this的值为 ImplicitThisValue(ref)
+  3. 如果 ref 不是 Reference，那么 this 的值为 undefined
+
+看下面各各例子
+
+### 示例1
+```js
+var value = 1;
+var foo = {
+  value: 2,
+  bar: function () {
+    return this.value;
+  }
+}
+console.log(foo.bar()); // 2
+```
+
+该例子的 MemberExpression 是一个属性访问表达式，也就是 MemberExpression . IdentifierName 结果是 foo.bar, 根据规范 11.2.1 所述,该 MemberExpression 返回的是一个 Reference, 也就是返回结果应该是如下：
+```js
+var ref = {
+  base: foo,
+  name: 'bar',
+  strict: false
+}
+```
+此时的 MemberExpression 结果就是一个 Reference,而 IsPropertyReference(ref) 也等于 true
+按照确认 this 步骤 2.1 所描述，将 MemberExpression 结果赋值给 ref, 如果 ref 是一个 Reference, 并且 IsPropertyReference(ref) 是 true,此时就可以确认 `this=GetBase(ref)`, 此时 GetBase 返回的则是 foo，那么 this 就等于 foo，所以该例子的结果应该是 2
+
+### 示例子2
+```js
+var value = 1;
+var foo = {
+  value: 2,
+  bar: function () {
+    console.log(this.value);
+  }
+}
+(foo.bar)(); // 2
+```
+
+foo.bar 被 () 包住，根据规范 11.1.6 The Grouping Operator 所述,实际上 () 并没有对 MemberExpression 进行计算，所以其实跟示例 1 的结果是一样的。
+
+### 示例子3
+```js
+var value = 1;
+var foo = {
+  value: 2,
+  bar: function () {
+    console.log(this.value);
+  }
+}
+(foo.bar = foo.bar)() // 1
+```
+
 
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
@@ -1918,6 +2041,8 @@ console.log( checkEmail('12adsf3@sina.com') )  //=> true
 # JavaScript 基础(AMD,UMD,ES6,TypeScript(静态),Node.JS(包管理))
 
 # JavaScript 基础(客户端请求,跨域(core,jsonp...),缓存)
+
+# JavaScript 进阶(函数式)
 
 # 框架/库(jQuery-raw,Vue,React,Angluar)
 
