@@ -2190,8 +2190,14 @@ console.log(o.me()); //=> 300
 在类的层次上, Function 和 Object 可以看作是相互继承
 而在实例的层次上，new Function() 和 new Object() 却不是，当实例 o.my() 在向上寻找过程中, 直接去了父类 Object 的原型，当 Object 原型中也不存在时，也就是到了原型链的顶端(Object 之上), null
 
-*null 为原型链的终点*
 
+```js
+// 实例原型顶端
+console.log(Object.prototype.__proto__) //=> null
+console.log(Function.prototype.__proto__ == Object.prototype) //=> true
+console.log(Function.prototype.__proto__.__proto__ == Object.prototype.__proto__) //=> true
+```
+*null 为原型链的终点*
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
 
