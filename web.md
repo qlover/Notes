@@ -1895,7 +1895,7 @@ var foo = args => args + 1
 
 通常情况下函数调用完成，其内在的所有局部变量和自己都会被垃圾收回自动销毁
 
-### 闭包
+## 闭包
 
 闭包是一种保护私有变量的机制，在函数执行时形成私有的作用域，保护里面的私有变量不受外界干扰。
 
@@ -1959,10 +1959,10 @@ var BarReference = {
 - IsPropertyReference(V)。 如果基值是个对象或 HasPrimitiveBase(V) 是 true，那么返回 true；否则返回 false。
 - IsUnresolvableReference(V)。 如果基值是 undefined 那么返回 true，否则返回 false。
 
-## MemberExpression 
+### MemberExpression 
 
 从字面意思上可以看出成员表达式的意思，但在规范中指出 MemberExpression 可以是以下几种
-- PrimaryExpression  原始表达式
+- PrimaryExpression : Identifier原始表达式
 - FunctionExpression  函数定义表达式
 - MemberExpression [ Expression ]  属性访问表达式
 - MemberExpression . IdentifierName  属性访问表达式
@@ -1974,7 +1974,7 @@ function foo(){
 foo() // foo 是 MemberExpression,也就是 ()左边的部分
 ```
 
-## 确认 this
+### 确认 this
 
 规范 11.2.3 第一步，第六步和第七步所述，确认 this 过程如：
 1. 计算 MemberExpression 表达式的结果赋值给 ref
@@ -1983,9 +1983,10 @@ foo() // foo 是 MemberExpression,也就是 ()左边的部分
   2. 如果 ref 是 Reference，并且 base value 值是 Environment Record, 那么this的值为 ImplicitThisValue(ref)
   3. 如果 ref 不是 Reference，那么 this 的值为 undefined
 
+*非严格模式下 this 为 undefined 时，会隐式的转换成全局对象*
+
 看下面各各例子
 
-### 示例1
 ```js
 var value = 1;
 var foo = {
@@ -1994,10 +1995,40 @@ var foo = {
     return this.value;
   }
 }
-console.log(foo.bar()); // 2
-```
+//示例1
+console.log(foo.bar());
+//示例2
+console.log((foo.bar)());
+//示例3
+console.log((foo.bar = foo.bar)());
+//示例4
+console.log((false || foo.bar)());
+//示例5
+console.log((foo.bar, foo.bar)());
 
-该例子的 MemberExpression 是一个属性访问表达式，也就是 MemberExpression . IdentifierName 结果是 foo.bar, 根据规范 11.2.1 所述,该 MemberExpression 返回的是一个 Reference, 也就是返回结果应该是如下：
+function bar (){
+  console.log(this)
+}
+bar()
+```
++ 执行上下文表达式
+
+也就是原始表达式，函数调用情况时，MemberExpression 是 foo, 即标识符调用
+
+规范 10.3.1 最后会调用  `GetIdentifierReference()` 方法直接返回该标识的 Reference 类型的值如下：
+```js
+var fooReference = {
+  base: EnvironmentRecord,
+  name: 'foo',
+  strict: false
+};
+```
+这时虽然返回的是一个 Reference 但是 IsPropertyReference() 并不是 true,因为 EnvironmentRecord 虽是引用类型的取值的一种但不是对象，所以 
+
+this 应该是 ImplicitThisValue(ref) ，规范 10.2.1.1.6 解释到 `Return undefined`, 所以最后的 this 应该就是 undefined,非严格模式下就是 window
+
++ 属性访问表达式
+示例1的 MemberExpression 是一个属性访问表达式，也就是 MemberExpression . IdentifierName 结果是 foo.bar, 根据规范 11.2.1 所述,该 MemberExpression 返回的是一个 Reference, 也就是返回结果应该是如下：
 ```js
 var ref = {
   base: foo,
@@ -2008,32 +2039,158 @@ var ref = {
 此时的 MemberExpression 结果就是一个 Reference,而 IsPropertyReference(ref) 也等于 true
 按照确认 this 步骤 2.1 所描述，将 MemberExpression 结果赋值给 ref, 如果 ref 是一个 Reference, 并且 IsPropertyReference(ref) 是 true,此时就可以确认 `this=GetBase(ref)`, 此时 GetBase 返回的则是 foo，那么 this 就等于 foo，所以该例子的结果应该是 2
 
-### 示例子2
-```js
-var value = 1;
-var foo = {
-  value: 2,
-  bar: function () {
-    console.log(this.value);
-  }
-}
-(foo.bar)(); // 2
-```
-
++ 括号成员表达式
 foo.bar 被 () 包住，根据规范 11.1.6 The Grouping Operator 所述,实际上 () 并没有对 MemberExpression 进行计算，所以其实跟示例 1 的结果是一样的。
 
-### 示例子3
++ 赋值运算
+
+示例3可以看出是不仅有括号包裹还有赋值去处，根据规范 11.13.1  Simple Assignment, 也就是等号运算,等号运算符返回右操作数，这里也就是右边的 `foo.bar`
+
+规范里面明确说明了该情况时会调用 `GetValue()` 返回值,而 GetValue() 在 规范 8.7.1 中解释不会返回 Reference 类型
+
+也就上面所述 ref 并不是一个 Reference, this 为 undefined，当前情况并没有在严格模式下，所以这里的 this 应该就是 window
+
++ 逻辑运算,逗号运算
+
+同样调用了 GetValue() 结果和上一个示例一致
+
+综上所述，用网上一句话解释就是 this 为调用函数的对象
+
+
+## 原型
+
+- prototype： 类指向的原型属性
+- constructor： 原型指向的类（构造器）
+- __proto__： 实例指向的原型对象
+
+JavaScript 中一个类就是一个构造函数,当一个类(构造函数)存在后，会自动创建一个与之独立的原型对象
 ```js
-var value = 1;
-var foo = {
-  value: 2,
-  bar: function () {
-    console.log(this.value);
-  }
+function Money(){ }
+```
+当 Money 类被实例化后，就是被 new 一次后，这个被 new 的对象就拥有了类(构造函数)中的成员,如果类中没有则会去找这个类的原型中的成员
+
+Money 类被创建就会产生一个 pototype 属性,该属性就是表示其原型 
+
+函数本身就有 length,name,arguments,caller,prototype 这些属性，函数也是对象，所以构造函数也如此
+
+可以理解为 Money 本身是一个类,实例化后就会得到一个对象,而 prototype 也是一个类实例化后的对象，只是 Money 是默认继承了它，它们相互存在却又相互独立
+
+虽然类和原型是独立的，但它们两个之间也可以用 `prototpye` 和 `constructor` 两个属性相互访问
+```js
+console.log( Money.prototype) // Money 类访问它的原型
+console.log( Money.prototype.constructor) // Money 类的原型访问它的构造器
+```
+*值得注意的是这两个属性一直相互调用访问对方*
+
+而 __proto__ 这个属性就有意思了，它表示实例对象的原型对象,也就是说 `Money.prototype === (new Money()).__proto__` 是成立的,只是从不同的角度都能够得到原型对象
+
+### 原型指向
+
+```js
+function Dollar(){ }
+function RMB(){ }
+Dollar.prototype.syb = '$'
+RMB.prototype.syb = '￥'
+
+// 改变原型
+var dollar = new Dollar()
+console.log(dollar.__proto__) // Dollar { syb: '$' }
+console.log(dollar.syb) // $
+Dollar.prototype = RMB.prototype
+console.log(dollar.__proto__) // Dollar { syb: '$' }
+dollar = new Dollar()
+console.log(dollar.syb) // ￥
+console.log(dollar.__proto__.constructor) // [Function: Dollar]
+```
+```js
+function Dollar(){ }
+function RMB(){ }
+Dollar.prototype = {
+  syb : '$'
 }
-(foo.bar = foo.bar)() // 1
+RMB.prototype = {
+  syb : '￥'
+}
+
+var dollar = new Dollar()
+console.log(dollar.__proto__) // { syb: '$' }
+console.log(dollar.syb) // $
+Dollar.prototype = RMB.prototype
+console.log(dollar.__proto__) // { syb: '$' }
+dollar = new Dollar()
+console.log(dollar.syb) // ￥
+console.log(dollar.__proto__.constructor) // [Function: Object]
 ```
 
+上面是两种不同方式的改变原型指向方法,第一方法只是为原型添加了 syb 属性,会保留构造指向,其它的什么也没改变
+第二种方法则不同了，首先将原型改变成了一个新的对象,并且会丢失构造指向，也就是同时会丢失原来原型指向和你先指向
+当原型指向改变第二次实例化的对象原型指向也会发生改变，也就会出现第二次实例时打印出的人民币而不是美元符号
+因为字面量对象写法也相当于做了一个 new Object()，所以第二个例子中的最后一行的原型也就是会变一个 Object 的实例对象
+
+```js
+
+function Dollar(){ }
+function RMB(){ }
+Dollar.prototype.syb = '$'
+RMB.prototype.syb = '￥'
+
+// 改变原型
+var dollar = new Dollar()
+var dollar2 = new Dollar()
+console.log(dollar.syb) // $
+console.log(dollar2.syb) // $
+dollar.__proto__ = RMB.prototype
+console.log(dollar.syb) // ￥
+console.log(dollar2.syb) // $
+```
+利用上面的定义再来一次
+```js
+var dollar = new Dollar()
+var dollar2 = new Dollar()
+console.log(dollar.syb) // $
+console.log(dollar2.syb) // $
+Dollar.prototype = RMB.prototype
+console.log(dollar.syb) // $
+console.log(dollar2.syb) // $
+```
+类指向的原型，会影响到每一个实例
+实例调用指向的原型只会影响到当前实例
+
+### Object 与 Function
+
+Object 原型链的顶端, Object 构造器是 Function 的实例,Object 作为对象是继承自 Function.prototype 的,此时 Function.prototype 继承自 Object.prototype
+Function 与 Object 是同等级但不同层次，Function 是自己的构造函数
+也有的说只有 Object 是原型链的顶端，Function 是继承 Object 的
+
+下面来看几段例子:
+```js
+// 向函数原型添加 my
+// 因为原型链的关系 继承自 Function.prototype
+Function.prototype.my = function(){
+  return 200;
+}
+// 如果 Object 在向上搜索的时候没有在 Function 中找到就去 Object 查找
+Object.prototype.me = function(){
+  return 300;
+}
+
+var f = new Function()
+var o = new Object()
+console.log(Object.my()); //=> 200
+console.log(Object.me()); //=> 300
+console.log(Function.my()); //=> 200
+console.log(Function.me()); //=> 300
+console.log(f.my()); //=> 200
+console.log(f.me()); //=> 300
+// console.log(o.my()); // TypeError: o.my is not a function
+console.log(o.me()); //=> 300
+// 这也说明了 Object 作为对象是继承自 Function.prototype 的 
+```
+
+在类的层次上, Function 和 Object 可以看作是相互继承
+而在实例的层次上，new Function() 和 new Object() 却不是，当实例 o.my() 在向上寻找过程中, 直接去了父类 Object 的原型，当 Object 原型中也不存在时，也就是到了原型链的顶端(Object 之上), null
+
+*null 为原型链的终点*
 
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
@@ -2042,7 +2199,7 @@ var foo = {
 
 # JavaScript 基础(客户端请求,跨域(core,jsonp...),缓存)
 
-# JavaScript 进阶(函数式)
+# JavaScript 进阶(函数式，高阶函数)
 
 # 框架/库(jQuery-raw,Vue,React,Angluar)
 
