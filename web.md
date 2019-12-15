@@ -1836,7 +1836,7 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 
 
 
-# JavaScript 基础(函数一等公民,闭包,原型,this,三种对象(内置,宿主...))
+# JavaScript 基础(函数一等公民,闭包,原型,继承,this,三种对象(内置,宿主...))
 
 ## 三种对象
 
@@ -2061,7 +2061,7 @@ foo.bar 被 () 包住，根据规范 11.1.6 The Grouping Operator 所述,实际�
 
 - prototype： 类指向的原型属性
 - constructor： 原型指向的类（构造器）
-- __proto__： 实例指向的原型对象
+- `__proto__`： 实例指向的原型对象
 
 JavaScript 中一个类就是一个构造函数,当一个类(构造函数)存在后，会自动创建一个与之独立的原型对象
 ```js
@@ -2081,8 +2081,9 @@ console.log( Money.prototype) // Money 类访问它的原型
 console.log( Money.prototype.constructor) // Money 类的原型访问它的构造器
 ```
 *值得注意的是这两个属性一直相互调用访问对方*
+*原型链和作用域链是一个道理,向上寻找的过程就是原型链*
 
-而 __proto__ 这个属性就有意思了，它表示实例对象的原型对象,也就是说 `Money.prototype === (new Money()).__proto__` 是成立的,只是从不同的角度都能够得到原型对象
+而 `__proto__` 这个属性就有意思了，它表示实例对象的原型对象,也就是说 `Money.prototype === (new Money()).__proto__` 是成立的,只是从不同的角度都能够得到原型对象
 
 ### 原型指向
 
@@ -2198,6 +2199,97 @@ console.log(Function.prototype.__proto__ == Object.prototype) //=> true
 console.log(Function.prototype.__proto__.__proto__ == Object.prototype.__proto__) //=> true
 ```
 *null 为原型链的终点*
+
+## 继承
+
+在原生的 JS 实现继承并非是轻松，也显得很简单，就比如组合继承，组合继承很类似其它面向对象语言一样，可以在类本体中调用类型构造一样，或者是原型式的继承，将类的原型作为需要继承对象的一个实例，这个地方就不在一一介绍各种继承的实现，《JavaScript高级程序设计》 有更详细的解释
+
+这里就来说说 bable 转码后的 es6 的继承实现
+
+```js
+class Person{
+  constructor(){
+    this.money = 100
+  }
+}
+class Student extends Person{
+  constructor(){
+    super()
+    this.age = 20
+  }
+}
+let sutdent = new Student()
+console.log(sutdent.age) //=> 20
+console.log(sutdent.money) //=> 100
+```
+
+这是一段很普通的 es6 的继承，下面看一下 bable 转换后的 es5 继承方式
+
+```js
+"use strict";
+
+function _possibleConstructorReturn(self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+  return call && (typeof call === "object" || typeof call === "function") ? call : self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+  }
+  // Object.create 创建一个全新的对象
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+  // 设置 subClass 原型为 superClass 
+  // 浏览器不支持 setPrototypeOf 则用 __proto__ 属性代替
+  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+var Person = function Person() {
+  _classCallCheck(this, Person);
+
+  this.money = 100;
+};
+
+var Student = function(_Person) {
+  _inherits(Student, _Person);
+
+  // Student 闭包返回 Student
+  function Student() {
+    _classCallCheck(this, Student);
+
+    var _this = _possibleConstructorReturn(this, (Student.__proto__ || Object.getPrototypeOf(Student)).call(this));
+
+    _this.age = 20;
+    return _this;
+  }
+
+  return Student;
+}(Person); // 隐式的传入需要继承对象的构造
+
+var sutdent = new Student();
+console.log(sutdent.age);
+console.log(sutdent.money);
+```
+
+仔细阅读会发现 bable 不仅用上了经典的构造器还用上了组合寄生的方式实现继承
+- 每一个构造在调用时都用了 `_classCallCheck` 方法判断是否用了 new 操作，如果没有用 new 操作则直接函数调用，会抛出错误
+- `_inherits` 方法主要实现了继承，用 `superClass` 的原生生成一个全新对象作为 `subClass` 原型对象,重写 `construcotr` 方法, 最后用 `Object.setPrototypeOf()` 方法设置一个指定的对象的原型为父类达到继承
+- `_possibleConstructorReturn` 方法在子类内部完成 this 的绑定解决子类与父类 this 指向
 
 # JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
 
