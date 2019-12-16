@@ -1814,7 +1814,7 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 ```
 
 
-以上来自 (MDN)[https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener]
+以上来自 [MDN](https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener)
 
 ### jQuery 事件
 
@@ -2291,13 +2291,177 @@ console.log(sutdent.money);
 - `_inherits` 方法主要实现了继承，用 `superClass` 的原生生成一个全新对象作为 `subClass` 原型对象,重写 `construcotr` 方法, 最后用 `Object.setPrototypeOf()` 方法设置一个指定的对象的原型为父类达到继承
 - `_possibleConstructorReturn` 方法在子类内部完成 this 的绑定解决子类与父类 this 指向
 
-# JavaScript 基础(callbacks/deffered,异步,Promise,Genterenr,await/async)
+# JavaScript 基础 异步解决方案
+
+javascript是一门单线程语言,即一次只能完成一个任务,若有多个任务要执行,则必须排队按照队列来执行(前一个任务完成,再执行下一个任务)。
+
+1. 回调队列(异步编程最基本方法)
+1. 事件监听
+2. Promise, CommandJS提出的一种规范，其目的是为异步编程提供统一接口
+3. gengerator
+4. async await
+5. nextTick setImmidate 
+6. async.js
+
+## Promise/A+ 规范
+
+一个 Promise 就是一个异步操作的结果,当然在 JavaScript 世界里就是一个对象，与 Promise 进行交互的最主要方式就是通过 `then()` 方法, then 方法也是 Promise 接口必需要实现的方法,详情可见 [commonjs Promises/A+规范](http://wiki.commonjs.org/wiki/Promises/A)
+
+首先 Promise 生命周期,也就是 Promise 的三个阶段
+1. Pending 初始化状态
+2. Fulfilled 完成状态,此状态必须有一个值,且不能改变
+3. Rejected 被拒绝状态,此状态也必须有一个值,且不能改变
+
+### promise.then(onFulfilled, onRejected)
+
+Promise 接口实现必须提供一个 then 方法去接收当前或者最终结果,从这里其实可以看出 Promise 也可以不做异步操作,因为可以直接操作当前的最终结果
+
+方法 then 有以下几个*不得不做*的事情:
+
+1. onFulfilled 和 onRejected 可选,但是如果有参数时必须时函数
+2. 当 onFulfilled 和 onRejected 作为函数时,只能在 promise 完成||被拒绝之后调用一次,且 promise 作为第一个参数
+3. 两个函数参数不能在当前 promise 之前调用
+  - 这个规范在 [3.2](https://promisesaplus.com/#notes) 有说明,意思就是可以在将当前的 promise 结果后通过其它的方式实现 `nextTick` 调度,确保事件循环之后并使用新堆栈异步执行onFulfilled 和 onRejected 
+4. 规范说明两个参数必须以函数调用,也就是把函数当作一种纯函数调用,不存在 this 上下文关系的函数
+5. 可以在同一次 promise 中多次被调用,但必须按照其对应的原始调用顺序执行
+6. 必须返回 promise, 也就是如果一个 then 函数参数返回一个值,后面接收这个值的地方必将是一个 promise
+
+从规范中可以看出一个 promise 必须实现 then 方法,且要满足以上几个条件,并且还可以在当前事件循环之后用异步方式调用 then 参数函数
+
+### ES6 Promise 实现 
+
+
+ES6 中一个 `new Promise( executor )` 表示一个 promise 异步操作的最终完成 (或失败), 及其结果值, `executor` 是带有 `resolve` 和 `reject` 两个参数的函数, 并且 executor 函数在 Promise 构造函数返回 promise 实例对象前被调用
+
+resolve 被调用时,会把 promise 状态更改为 Fulfilled, es6 中就是已经完成
+
+rejected 被调用时,会把 promise 状态更改为 Rejected 也就是失败
+
+executor 内部操作完成后可能成功也可能失败,但如果内部出现异常, 那么该 promise 状态就为 Rejected, executor 的返回值也会被忽略
+
+
+- Promise.length 其值总是为 1 (构造器参数的数目)
++ Promise.all(iterable)
+  - iterable 是一个可迭代的 promise 集合,只有当集合中每一个 promise 都成功才会执行,集合中所有 promise 返回值的数组作为成功回调的返回值,最后返回一个新的 promise
++ Promise.race(iterable)
+  - 当 iterable 参数里的任意一个子 promise 被成功或失败后,父 promise 马上也会用子 promise 的成功返回值或失败详情作为参数调用父 promise 绑定的相应句柄，并返回该 promise 对象
++ Promise.reject(reason)
+  - 返回一个状态为失败的Promise对象，并将给定的失败信息传递给对应的处理方法
++ Promise.resolve(value)
+  - 返回一个状态由给定 value 决定的 Promise 对象
+  - 如果 value 是一个带有 then 方法的对象则返回的 promise 由 value.then 决定
+  - 如果不是则返回的 Promise 对象状态为 fulfilled,并且将该value传递给对应的then方法。
+  - *有时也可以利用该方法特性检测 value 是否是一个 promise 对象*
+  ```js
+  var o = {
+   then(){
+     console.log('o.then')
+   }
+  }
+  有 then 方法的对象
+  Promise.resolve(o).then(() => {
+   console.log('native then')
+  })
+  // o.then
+  ```
+  ```js
+  var o = {
+    run(){
+      console.log('o.then')
+    }
+  }
+  // 不是有 then 方法的对象
+  Promise.resolve(o).then( v => {
+    v.run() // o.then
+    console.log('native then') // native then
+  })
+  // o.then
+  ```
++ Promise.prototype.catch(onRejected)
+  - 添加一个拒绝(rejection) 回调到当前 promise, 返回一个新的 promise
++ Promise.prototype.then(onFulfilled, onRejected)
+  - 添加一个成功和失败回调, 返回一个新的 promise, 将以回调的返回值来 resolve.
++ Promise.prototype.finally(onFinally)
+  - 无论当前 promise 状态都会执行
+
+*值得注意的是 ES6 的 promise 实现不是支持 IE 的*
+
+## async await
+
+## async.js
+
 
 # JavaScript 基础(AMD,UMD,ES6,TypeScript(静态),Node.JS(包管理))
 
 # JavaScript 基础(客户端请求,跨域(core,jsonp...),缓存)
 
 # JavaScript 进阶(函数式，高阶函数)
+
+## 组合函数
+```javascript
+// compse of redux
+const compose = (...fns) => {
+  if (fns.length === 0) return arg => arg
+  if (fns.length === 1) return fns[0]
+  return fns.reduce((a, b) => (...args) => a(b(...args)))
+}
+const addOne = x => x + 1;
+const square = x => x * x;
+let addOneThenSquare = compose(addOne, square)
+console.log(addOneThenSquare(2)) // 5
+addOneThenSquare = compose(square, addOne)
+console.log(addOneThenSquare(2)) // 9
+```
+
+## AOP
+
+## 柯里化
+把接受多个参数的函数变换成一系列接受单一参数（从最初函数的第一个参数开始）的函数的技术（注意是单一参数）
+
+1. 参数复用
+```javascript
+const check = reg => txt => reg.test(txt);
+const hasNumber = check(/\d+/)
+console.log(check(/\d+/)('ad22f')) // => true
+console.log(hasNumber('ad22f')) // => true
+```
+2. 提前确认
+
+判断第一次时就返回函数，避免后面重复判断,比如事件判断
+```javascript
+// common
+var addEvent = function(ele, type, fn, isCapture) {
+  if(window.addEventListener) {
+    ele.addEventListener(type, fn, isCapture)
+  } else if(window.attachEvent) {
+    ele.attachEvent("on" + type, fn)
+  }
+}
+// 每一次调用都会判断一次
+
+// curry
+var addEvent = (function() {
+  if(window.addEventListener) {
+    return function(ele, type, fn, isCapture) {
+      ele.addEventListener(type, fn, isCapture)
+    }
+  } else if(window.attachEvent) {
+    return function(ele, type, fn) {
+       ele.attachEvent("on" + type, fn)
+    }
+  }
+})()
+// 该判断只执行了一次，利用闭包一直记录返回的函数
+```
+3. 延迟运行
+
+AOP 方式，将函数延迟执行效果
+
+## 偏函数
+一个多参数的函数且传入部分参数后，返回一个需要更少参数的新函数
+
+## 编译函数
+
 
 # 框架/库(jQuery-raw,Vue,React,Angluar)
 
@@ -2354,3 +2518,9 @@ Commit Message 格式
 - https://www.w3.org/TR/css-cascade-4/#cascading
 - https://blog.csdn.net/lch1251680944/article/details/87975532
 - https://www.w3.org/TR/CSS2/visuren.html#normal-flow
+- https://yq.aliyun.com/articles/617734?utm_content=m_1000007927
+- http://www.ecma-international.org/ecma-262/6.0/index.html
+- https://promisesaplus.com/
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+- http://kangax.github.io/compat-table/es6/
+- https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects
