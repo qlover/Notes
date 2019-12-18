@@ -2358,7 +2358,7 @@ executor 内部操作完成后可能成功也可能失败,但如果内部出现�
      console.log('o.then')
    }
   }
-  有 then 方法的对象
+  // 有 then 方法的对象
   Promise.resolve(o).then(() => {
    console.log('native then')
   })
@@ -2394,6 +2394,173 @@ executor 内部操作完成后可能成功也可能失败,但如果内部出现�
 # JavaScript 基础(AMD,UMD,ES6,TypeScript(静态),Node.JS(包管理))
 
 # JavaScript 基础(客户端请求,跨域(core,jsonp...),缓存)
+
+## 前端 HTTP 请求方式
+
++ 第一代原生方式 xhr
++ ES6 新增第二代原生方式 fetch
++ 第三方
+  - axios.js 对第一代原生方式的封装
+  - vue-resource vue 插件
+  - rxjs 另一种响应式的处理分发和流程操作类库
+
+### axios
+
+Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js 中, axios 的特点：
+
+- 从浏览器中创建 XMLHttpRequests
+- 从 node.js 创建 http 请求
+- 支持 Promise API
+- 拦截请求和响应
+- 转换请求数据和响应数据
+- 能够作到 abort
+- 自动转换 JSON 数据
+- 客户端支持防御 XSRF
+
+从 [axios](https://cdn.bootcss.com/axios/0.19.0-beta.1/axios.js) 源码入手
+
+抛开 webpack 打包的代码，这里就直接从 494 行开始
+
+```
+{ [Function: wrap]
+  request: [Function: wrap],
+  getUri: [Function: wrap], // 别名函数, 发送 getUri 请求
+  delete: [Function: wrap], // 别名函数, 发送 delete 请求
+  get: [Function: wrap], // 别名函数, 发送 get 请求
+  head: [Function: wrap], // 别名函数, 发送 head 请求
+  options: [Function: wrap], // 别名函数, 发送 options 请求
+  post: [Function: wrap], // 别名函数, 发送 post 请求
+  put: [Function: wrap], // 别名函数, 发送 put 请求
+  patch: [Function: wrap],
+  defaults:
+   { adapter: [Function: httpAdapter],
+     transformRequest: [ [Function: transformRequest] ],
+     transformResponse: [ [Function: transformResponse] ],
+     timeout: 0,
+     xsrfCookieName: 'XSRF-TOKEN',
+     xsrfHeaderName: 'X-XSRF-TOKEN',
+     maxContentLength: -1,
+     validateStatus: [Function: validateStatus],
+     headers:
+      { common: [Object],
+        delete: {},
+        get: {},
+        head: {},
+        post: [Object],
+        put: [Object],
+        patch: [Object] } },
+  interceptors:
+   { request: InterceptorManager { handlers: [] },
+     response: InterceptorManager { handlers: [] } },
+  Axios: [Function: Axios],
+  create: [Function: create],
+  Cancel: [Function: Cancel],
+  CancelToken: { [Function: CancelToken] source: [Function: source] },
+  isCancel: [Function: isCancel],
+  all: [Function: all],
+  spread: [Function: spread],
+  default: [Circular] }
+```
+在 node 环境中打印出来的结果中可以看出，axios 暴露出来的一些属性和方法
+
+
+### request
+
+```js
+const axios = require('axios')
+const url = '/asset/axios-test-json.json'
+axios.request(url)
+  .then( res => console.log('requet>>', res.data))
+axios.get(url)
+  .then( res => console.log('get>>', res.data))
+```
+
+`__webpack_require__(11)` 方法(846行),该方法内部声明配置了 axios 的一些默认配置
+
+以下是 axios 主要依赖模块
+
+```js
+var utils = __webpack_require__(2); // 工具方法
+var buildURL = __webpack_require__(6); // 地址构建器
+var InterceptorManager = __webpack_require__(7); // 拦截器
+var dispatchRequest = __webpack_require__(8); // 请求调度器
+var mergeConfig = __webpack_require__(22); // 合并配置
+```
+
+### InterceptorManager 拦截器
+
+每实例化一次 axios 时默认总会给当前实例增加一个 `defaults` 属性 和 `interceptors`对象,前者表示该实例的默认配置,后者则表示一个拦截器, InterceptorManager 内部用一个 `handlers` 栈维护,每个拦截器都会有 fulfilled 和 rejected 两个方法,
+
+https://zhuanlan.zhihu.com/p/25383159
+
+### 连接拦截器
+
+```js
+if (typeof config === 'string') {
+  config = arguments[1] || {};
+  config.url = arguments[0];
+} else {
+  config = config || {};
+}
+```
+该方法是整个 axios 请求入口,方法的开始和 jQuery.prototype.ajax 一样都是对参数作处理,也就是说可以直接传入 url 地址, 或者传入 url,再传入一个配置项对象
+
+源码 537 行
+```js
+var chain = [dispatchRequest, undefined]; // Line:537
+var promise = Promise.resolve(config); // Line:538
+this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+  chain.unshift(interceptor.fulfilled, interceptor.rejected);
+});
+
+this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+  chain.push(interceptor.fulfilled, interceptor.rejected);
+});
+
+while (chain.length) {
+  promise = promise.then(chain.shift(), chain.shift()); // Line:549 
+}
+
+return promise;
+```
+
+538行 由 ES6 的 Promise 实现可得出, Promise.resolve(config) 是为了将 config 创建成一个 promise 对象,
+而 537 行创建了一个数组包裹的请求调度器,将注册在拦截器中的所有 fulfilled 和 rejected 方法依次放入 请求调度器和 undefined 占位前后
+
+补充一段实例,该实例是在浏览器环境中,当前保证能够成功响应时
+```js
+const url = 'axios-test-json.json'
+axios.interceptors.request.use( function rs1(config){
+  console.log('request 1 success')
+  return config
+}, function re1 (error){
+  console.log('response 1 error', error)
+  return Promise.reject(error)
+})
+axios.interceptors.response.use(  function rs2(config){
+  console.log('request 2 success')
+  return config
+}, function re2 (error){
+  console.log('response 2 error', error)
+  return Promise.reject(error)
+})
+axios.request(url).then( r => console.log('response'))
+// request 1 success
+// request 2 success
+// response
+```
+
+特别注意 Promise.resolve(config) 是将 config 包装成一个 promise 对象, ES6 的该方法实现有介绍, config 在默认情况下是不存在 then 方法的,也就是说 config 是一个不带 then 方法的对象,所以*返回的 Promise 对象状态为 fulfilled,并且将该value传递给对应的then方法*,这里在的 then 方法就是 549 行的 then,因为当前的状态直接为 fulfilled, 所以不仅将请求之前需要执行的拦截器的成功回调全部依次执行
+
+这也是为什么 rs1 和 rs2 两个方法都被直接 fulfilled 执行了
+
+如果当响应不成功时, 在响应的拦截器会将会依次执行，特别注意!!!
+
+
+
+
+
+
 
 # JavaScript 进阶(函数式，高阶函数)
 
