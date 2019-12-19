@@ -2463,18 +2463,7 @@ Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js �
 
 ### request
 
-抛开 webpack 打包的代码，这里就直接从 494 行开始
-
-```js
-const axios = require('axios')
-const url = '/asset/axios-test-json.json'
-axios.request(url)
-  .then( res => console.log('request>>', res.data))
-axios.get(url)
-  .then( res => console.log('get>>', res.data))
-```
-
-`__webpack_require__(11)` 方法(846行),该方法内部声明配置了 axios 的一些默认配置
+抛开 webpack 打包的代码，这里就直接从 494 行开始，`__webpack_require__(11)` 方法(846行),该方法内部声明配置了 axios 的一些默认配置
 
 以下是 axios 主要依赖模块
 
