@@ -2404,7 +2404,7 @@ executor 内部操作完成后可能成功也可能失败,但如果内部出现�
   - vue-resource vue 插件
   - rxjs 另一种响应式的处理分发和流程操作类库
 
-### axios
+## 前端 HTTP 请求方式--axios
 
 Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js 中, axios 的特点：
 
@@ -2413,13 +2413,11 @@ Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js �
 - 支持 Promise API
 - 拦截请求和响应
 - 转换请求数据和响应数据
-- 能够作到 abort
+- 能够作到 abort, 并且能够自定义处理请求
 - 自动转换 JSON 数据
 - 客户端支持防御 XSRF
 
 从 [axios](https://cdn.bootcss.com/axios/0.19.0-beta.1/axios.js) 源码入手
-
-抛开 webpack 打包的代码，这里就直接从 494 行开始
 
 ```
 { [Function: wrap]
@@ -2463,14 +2461,15 @@ Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js �
 ```
 在 node 环境中打印出来的结果中可以看出，axios 暴露出来的一些属性和方法
 
-
 ### request
+
+抛开 webpack 打包的代码，这里就直接从 494 行开始
 
 ```js
 const axios = require('axios')
 const url = '/asset/axios-test-json.json'
 axios.request(url)
-  .then( res => console.log('requet>>', res.data))
+  .then( res => console.log('request>>', res.data))
 axios.get(url)
   .then( res => console.log('get>>', res.data))
 ```
@@ -2493,7 +2492,7 @@ var mergeConfig = __webpack_require__(22); // 合并配置
 
 https://zhuanlan.zhihu.com/p/25383159
 
-### 连接拦截器
+#### 连接拦截器
 
 ```js
 if (typeof config === 'string') {
@@ -2524,8 +2523,11 @@ while (chain.length) {
 return promise;
 ```
 
-538行 由 ES6 的 Promise 实现可得出, Promise.resolve(config) 是为了将 config 创建成一个 promise 对象,
-而 537 行创建了一个数组包裹的请求调度器,将注册在拦截器中的所有 fulfilled 和 rejected 方法依次放入 请求调度器和 undefined 占位前后
+538行 由 ES6 的 Promise 实现可得出, Promise.resolve(config) 是为了将 config 创建成一个 promise 对象, 而 537 行创建了一个数组包裹的请求调度器,将注册在拦截器中的所有 fulfilled 和 rejected 方法依次放入请求调度器和 undefined 占位前后
+
+特别注意第 537 行, 因为 promise 在 538 行时，状态已经为 resolved 了，也就是说已经完成了，也就会从头触发到尾巴，但是中途会发现 shift() 方法会经过 `dispatchRequest, undefined` 这两个占位符，当然此时的 then 永远会 reslove，永远不会 reject,因为 rejected 是一个 undefined，这也是为什么会出现 undefined 占位符原因
+
+此处后面的 response 响应的拦截器也会永远的被执行,但再那之前,会经过请求调度器,所以目转调度器
 
 补充一段实例,该实例是在浏览器环境中,当前保证能够成功响应时
 ```js
@@ -2555,6 +2557,101 @@ axios.request(url).then( r => console.log('response'))
 这也是为什么 rs1 和 rs2 两个方法都被直接 fulfilled 执行了
 
 如果当响应不成功时, 在响应的拦截器会将会依次执行，特别注意!!!
+
+
+### 请求处理器  adapter
+
+接下来就是源码第 779 行,利用 adapter 请求处理器,对 config 内容进行 promise 操作,取消操作的地方都用了 `throwIfCancellationRequested` 阻止当次操作
+
+`__webpack_require__(13)` 创建默认 config 的方法，来到源码 970 行
+
+```js
+module.exports = function xhrAdapter(config) {
+  return new Promise(function dispatchXhrRequest(resolve, reject) {
+    request.onreadystatechange = function handleLoad() {
+      settle(resolve, reject, response)
+      request = null
+    }
+    request.onabort = function handleAbort() {}
+    request.onerror = function handleError() {}
+    request.ontimeout = function handleTimeout() {}
+  })
+}
+```
+
+该方法是 defaluts.adapter 的源头。 axios 是可以支持 node 和浏览器环境的，虽然是对底层做了封装，但是对于过老 IE 这样的浏览器是不支持 `XMLHttpRequest` 对象的，也就不支持过老的版本
+
+1. 浏览器环境中使用浏览器设定默认的 `Content-Type` 头部字段
+2. 默认可携带 HTTP 验证并 bota 转码
+3. 可配置超时时间，默认不超时
+4. 取消，错误和超时分别用原生 onabort，onerror和ontimeout 事件监听
+5. 响应状态 `[200, 300)` 区间视为成功
+
+*此处的响应完全是原生的响应内容*,需要返回给请求调度器对响应进行转换才是最后请求成功后的样子
+
+### 请求调度器 dispatchRequest
+
+直接来到源码的 `__webpack_require__(8)` 方法(717行),该方法中引入的更多的模块
+
+```js
+var utils = __webpack_require__(2);
+var transformData = __webpack_require__(9); // 请求响应转换工具
+var isCancel = __webpack_require__(10);  // 取消操作时付加对象,有个内部属性 __CANCEL__
+var defaults = __webpack_require__(11); // 默认配置
+var isAbsoluteURL = __webpack_require__(20); // URL 判断工具
+var combineURLs = __webpack_require__(21); // 组全 URL
+```
+`isAbsoluteURL` 判断 URL 是否是一个绝对路径,遵守 [`RFC 3986`](http://www.cnpaf.net/Class/Rfcen/200610/16779.html) 编码规范方案
+
+```js
+function throwIfCancellationRequested(config) {
+  if (config.cancelToken) {
+    config.cancelToken.throwIfRequested();
+  }
+}
+```
+
+该方法简短,也没什么其它操作,但该方法在源码其它位置往往都在主方法体内的第一行,如注释其就是为了判断该实例是否取消了请求,而这个标识就是`config.cancelToken`
+
+源码 777 行:
+```js
+var adapter = config.adapter || defaults.adapter;
+return adapter(config).then(function onAdapterResolution(response) {
+  // 成功时对此次请求进行取消检查
+  throwIfCancellationRequested(config);
+  // Transform response data
+  response.data = transformData(
+    response.data,
+    response.headers,
+    config.transformResponse
+  );
+  return response;
+}, function onAdapterRejection(reason) {
+  if (!isCancel(reason)) {
+    // 失败时对此次请求进行取消检查
+    throwIfCancellationRequested(config);
+    // Transform response data
+    if (reason && reason.response) {
+      reason.response.data = transformData(
+        reason.response.data,
+        reason.response.headers,
+        config.transformResponse
+      );
+    }
+  }
+  return Promise.reject(reason);
+});
+```
+config.adapter 就是用户自定义请求的来源,在 axios 内部,默认每个实例都会有一个请求处理方法 `defaults.adapter`, 但值得注意的是该方法需要返回一个 Promise 来处理后续操作并且还得提供一个有效的响应, axios 官方上解释,在当前的请求前后会分别执行转换和拦截,转换则是转换请求或响应,拦截则是拦截器,详情可见[例子](https://github.com/axios/axios/tree/master/lib/adapters)
+
+最后无论成功失败,将响应转换成 axios 独特格式 ☺
+
+其实这个转换默认只是判断是否为字符串,如果是字符串则直接  `JSON.parse()` 否则啥也做,当然,这个转换规则可以是多个,默认是只有一个的,最后回到原点, 源码 549 行，将最后的 promise 返回给用户
+
+*响应以用请求的转换可以具体参数 `config.transformResponse` 配置*
+
+个人认为在此源码 549 行是整个 axios 的核心，因为它的奇妙设计，利用栈队列这个样的数据结构，完美的实现了请求拦截器,请求处理和响应拦截器之间的次序，很直观的对机器表达出了自己想要做的事，个人很佩服这一点。
+
 
 
 
@@ -2691,3 +2788,4 @@ Commit Message 格式
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 - http://kangax.github.io/compat-table/es6/
 - https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects
+- https://github.com/axios/axios/tree/master/lib/adapters
