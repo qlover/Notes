@@ -2702,7 +2702,7 @@ http.createServer( (request, response) => {
   const method = request.method// 请求方式
   console.log(`Host: ${host} Method: ${method}`) 
   response.writeHead(200, { // 直接响应 200 状态码
-    'Content-Type': 'application/json', // 普通文本
+    'Content-Type': 'text/plain', // 普通文本
     'Access-Control-Allow-Origin' : '*',
     'Access-Control-Allow-Headers' : 'X-Requested-With',
     'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
@@ -2768,7 +2768,7 @@ http.createServer( (request, response) => {
   const method = request.method// 请求方式
   console.log(`Host: ${host} Method: ${method}`) 
   response.writeHead(200, { // 直接响应 200 状态码
-    'Content-Type': 'application/json', // 普通文本
+    'Content-Type': 'application/json', // json 格式
     'Access-Control-Allow-Origin' : '*',
     'Access-Control-Allow-Headers' : 'X-Requested-With, Content-Type',
     'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
@@ -2833,9 +2833,6 @@ Host: http://local.notetest.com:81 Method: OPTIONS
 Host: http://local.notetest.com:81 Method: POST
 ```
 
-细心的你会发现后台一直有 cookie 返回,前端却没有接收到,虽然前端加上了 withCredentials, 也没有
-
-!!!那是因为如果需要共享资源`Access-Control-Allow-Origin`头部字段不能是`*`
 
 
 
