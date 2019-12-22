@@ -609,7 +609,7 @@ Douglas Crockford曾写过一本很簿的书《JavaScript: The Good Parts》，�
 
 那么 Babel 就是将浏览器未实现的 ECMAScript 规范语法转化为浏览器可运行的低版本代码
 
-## 同源策咯
+## 同源策略
 
 1. URL 端口一样(IE除外)
 2. 域名一样
@@ -629,11 +629,11 @@ XHR 和 Fetch 遵循同源策略
 
 ### 什么情况需要 CORS
 
-· 前文提到的由 XMLHttpRequest 或 Fetch 发起的跨域 HTTP 请求。
-· Web 字体 (CSS 中通过 @font-face 使用跨域字体资源), 因此，网站就可以发布 TrueType 字体资源，并只允许已授权网站进行跨站调用。
-· WebGL 贴图
-· 使用 drawImage 将 Images/video 画面绘制到 canvas
-· 样式表（使用 CSSOM）
+- 前文提到的由 XMLHttpRequest 或 Fetch 发起的跨域 HTTP 请求。
+- Web 字体 (CSS 中通过 @font-face 使用跨域字体资源), 因此，网站就可以发布 TrueType 字体资源，并只允许已授权网站进行跨站调用。
+- WebGL 贴图
+- 使用 drawImage 将 Images/video 画面绘制到 canvas
+- 样式表（使用 CSSOM）
 
 跨域资源共享在 HTTP 头部声明一组字段,使其能够通过浏览器有权限访问哪些资源
 
@@ -653,7 +653,7 @@ req 发送 `origin` 字段, res 响应 `Access-Control-Allow-Origin`,如果 `ori
 
 ### 预检请求
 
-当 HTTP 请求对服务器有副作用,浏览器必须先完成预检请求
+当 HTTP 请求不再是一次简单请求时(对服务器有副作用),也就是不满足简单请求的条件时,浏览器必须先完成预检请求
 完全满足以下五个条件
 1. PUT | DELETE | CONNECT |OPTIONS | TRACE | PATCH
 2. *人为设置* `CORS 安全的首部字段集合` 之外的首部字段
@@ -664,35 +664,43 @@ req 发送 `origin` 字段, res 响应 `Access-Control-Allow-Origin`,如果 `ori
 
 预检请求与响应
 ```
- 1.OPTIONS /resources/post-here/ HTTP/1.1
- 2.Host: bar.other
- 3.User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
- 4.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
- 5.Accept-Language: en-us,en;q=0.5
- 6.Accept-Encoding: gzip,deflate
- 7.Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
- 8.Connection: keep-alive
- 9.Origin: http://foo.example
-10.Access-Control-Request-Method: POST # 告知服务器实际请求时用 POST 方法
-11.Access-Control-Request-Headers: X-PINGOTHER, Content-Type # 告知服务器实际请求将会携带两个自定义请求头部字段
-12.
-13.
-14.HTTP/1.1 200 OK
-15.Date: Mon, 01 Dec 2008 01:15:39 GMT
-16.Server: Apache/2.0.61 (Unix)
-17.Access-Control-Allow-Origin: http://foo.example
-18.Access-Control-Allow-Methods: POST, GET, OPTIONS # 预检响应,服务器允许POST GET OPTIONS 
-19.Access-Control-Allow-Headers: X-PINGOTHER, Content-Type # 允许
-20.Access-Control-Max-Age: 86400 # 该预检请求有效期 86400s
-21.Vary: Accept-Encoding, Origin
-22.Content-Encoding: gzip
-23.Content-Length: 0
-24.Keep-Alive: timeout=2, max=100
-25.Connection: Keep-Alive
-26.Content-Type: text/plain
+# 请求
+OPTIONS /resources/post-here/ HTTP/1.1 # 以 options 方式发送第一次请求
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+Origin: http://foo.example
+Access-Control-Request-Method: POST # 告知服务器实际请求时用 POST 方法
+Access-Control-Request-Headers: X-PINGOTHER, Content-Type # 告知服务器实际请求将会携带两个自定义请求头部字段
+
+# 响应
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:39 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://foo.example
+Access-Control-Allow-Methods: POST, GET, OPTIONS # 预检响应,服务器允许POST GET OPTIONS 
+Access-Control-Allow-Headers: X-PINGOTHER, Content-Type # 允许
+Access-Control-Max-Age: 86400 # 该预检请求有效期 86400s
+Vary: Accept-Encoding, Origin
+Content-Encoding: gzip
+Content-Length: 0
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain
 ```
+
+不再是简单请求时,浏览器这时会在实际请求前对服务器发送一次 OPTION 方式的请求来验证服务器是否允许该实际请求
+
+
 实际请求与响应
 ```
+# 请求
 POST /resources/post-here/ HTTP/1.1
 Host: bar.other
 User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
@@ -709,7 +717,9 @@ Origin: http://foo.example
 Pragma: no-cache
 Cache-Control: no-cache
 
-<?xml version="1.0"?><person><name>Arun</name></person>
+<?xml version="1.0"?><person><name>Arun</name></person> # 发送的非简单请求的内容
+# content-type 为 xml
+# 响应
 
 
 HTTP/1.1 200 OK
@@ -744,6 +754,7 @@ Access-Control-Allow-Origin: <origin> | *
 Access-Control-Expose-Headers: X-My-Custom-Header, X-Another-Custom-Header
 # 指定预检请求缓存多长时间
 Access-Control-Max-Age: <delta-seconds>
+# 允许浏览器访问响应内容, 如果不设置浏览器将不会把响应内容返回给请求的发送者
 Access-Control-Allow-Credentials: true
 # 允许的 HTTP 请求方法
 Access-Control-Allow-Methods: <method>[, <method>]*
@@ -2642,9 +2653,189 @@ config.adapter 就是用户自定义请求的来源,在 axios 内部,默认每�
 个人认为在此源码 549 行是整个 axios 的核心，因为它的奇妙设计，利用栈队列这个样的数据结构，完美的实现了请求拦截器,请求处理和响应拦截器之间的次序，很直观的对机器表达出了自己想要做的事，个人很佩服这一点。
 
 
+## 跨域解决方案
 
+当请求的目标地址和当前网站地址的 URL 端口不一样，或域名，或协议一样，满足其中任何一个的请求就会触发浏览器的同源策略限制，也就是不让你访问，完美的跨域解决是前后两端共同商讨决策
 
+以下是可通过跨域访问的几种方案:
 
+1. 通过 jsonp 跨域
+2. document.domain + iframe跨域
+3. location.hash + iframe
+4. window.name + iframe跨域
+5. postMessage 跨域
+6. HTTP 访问控制(CORS)
+7. nginx 代理跨域
+8. nodejs 中间件代理跨域
+9. WebSocket 协议跨域
+
+### HTTP 访问控制
+
+req 发送 origin 字段, res 响应`Access-Control-Allow-Origin`,如果 origin 来源在 Access-Control-Allow-Origin 中则是达成 CORS,这也是简单请求完成的最简单的访问控制,使用该方案应注意下几点:
+1. 如果是简单请求,在之前的 HTTP 访问控制有说明,什么是简单请求和预检请求,如果该次跨域只个简单请求则会直接发送跨域请求,后端的`Access-Control-Allow-Origin`字段可以是`*`
+2. 如果不是简单请求,那么每一次非简单请求都增加一个 option 方式的预检请求消耗,特别注意
+3. 如果需要共享资源(因为简单的跨域请求是不会共享资源的,也就是 cookie,session 等会话或存储) 那一定注意,后端的 HTTP 控制头部字段必须支持`Access-Control-Allow-Origin`不能在是`*`应该具体到某一个访问域下面
+4. 如果要携带 cookie, 后端同样要允许`Access-Control-Allow-Credentials`字段,虽然可以资源共享了,但那也是后端可以支持,并不代表前后两端都能接收和发送,所以前端还必须将 `Credentials` 请求字段设置为 `true`
+
+*注意 application/json 或者是 application/xml 已经不满足简单请求,所以该 content-type 就应该需要预检*
+
+以下是一次简单的跨域请求:
+
+为了演示一次跨域,客户端访问在 http://local.notetest.com:81 浏览器环境
+```js
+// http://local.notetest.com:81/index.html
+const url = 'http://localhost:8080'
+// 浏览器环境运行
+require(['require.config'], function ( config ) {
+  require(['axios'], function _axios( axios) {
+    axios.get(url).then( function( res ){
+      console.log(res)
+    })
+  })
+})
+```
+服务器端访问到 http://localhost:8080
+```js
+const http = require('http')
+http.createServer( (request, response) => {
+  const host = request.headers.origin// 请求地址
+  const method = request.method// 请求方式
+  console.log(`Host: ${host} Method: ${method}`) 
+  response.writeHead(200, { // 直接响应 200 状态码
+    'Content-Type': 'application/json', // 普通文本
+    'Access-Control-Allow-Origin' : '*',
+    'Access-Control-Allow-Headers' : 'X-Requested-With',
+    'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
+    'Set-Cookie' : 'money=100;httpOnly;expires=60', // 携带一个 cookie
+  })
+  // 直接返回字符串
+  response.end('{ "name" : "qlover", "age" : 21 }')
+}).listen(8080)
+```
+
+浏览器中直接访问, 服务器会在命令行中打印出 `Host: http://local.notetest.com:81 Method: GET`
+
+请求和响应的头部信息
+```
+# 请求
+Request URL: http://localhost:8080/
+Request Method: GET
+Remote Address: [::1]:8080
+Referrer Policy: no-referrer-when-downgrade
+Accept: application/json, text/plain, */*
+Origin: http://local.notetest.com:81
+Referer: http://local.notetest.com:81/
+Sec-Fetch-Mode: cors
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
+ */
+# 响应
+Access-Control-Allow-Headers: X-Requested-With
+Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
+Access-Control-Allow-Origin: *
+Connection: keep-alive
+Content-Type: text/plain
+Date: Sat, 21 Dec 2019 15:11:25 GMT
+Transfer-Encoding: chunked
+
+# 服务器打印信息
+Host: http://local.notetest.com:81 Method: GET
+```
+
+下面将请求的方式变成  post, 并且设置请求 content-type 指定为 json 格式返回,这样就不满足简单请求
+
+```js
+require(['require.config'], function ( config ) {
+  require(['axios'], function _axios( axios) {
+    axios.post(url,{
+      'Content-Type' : 'application/json'
+    }).then( function( res ){
+      console.log(res)
+    })
+  })
+})
+```
+node 服务器打印结果为 `Host: http://local.notetest.com:81 Method: OPTIONS`, 说明这个时间已经不再是简单,进行了预检请求,这个时的请求会在前台控制台打印抛出错误
+```
+Access to XMLHttpRequest at 'http://localhost:8080/' from origin 'http://local.notetest.com:81' has been blocked by CORS policy: Request header field content-type is not allowed by Access-Control-Allow-Headers in preflight response.
+```
+这个时候的服务器端并未允许 content-type 字段,并且响应数据还只是 text/plain 所以会报错,接下来允许 content-type 字段并改变服务器的响应内容为 json
+
+```js
+const http = require('http')
+http.createServer( (request, response) => {
+  console.log(request.headers)
+  const host = request.headers.origin// 请求地址
+  const method = request.method// 请求方式
+  console.log(`Host: ${host} Method: ${method}`) 
+  response.writeHead(200, { // 直接响应 200 状态码
+    'Content-Type': 'application/json', // 普通文本
+    'Access-Control-Allow-Origin' : '*',
+    'Access-Control-Allow-Headers' : 'X-Requested-With, Content-Type',
+    'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
+    'Set-Cookie' : 'money=100;httpOnly;expires=60', // 携带一个 cookie
+  })
+  // 直接返回字符串
+  response.end('{ "name" : "qlover", "age" : 21 }')
+}).listen(8080)
+```
+
+此时会先以 OPTION 方式进行预检请求,并且请求响应头部如下:
+```
+# 请求
+Request URL: http://localhost:8080/
+Request Method: OPTIONS
+Remote Address: [::1]:8080
+Referrer Policy: no-referrer-when-downgrade
+Access-Control-Request-Headers: content-type
+Access-Control-Request-Method: POST
+Origin: http://local.notetest.com:81
+Referer: http://local.notetest.com:81/
+Sec-Fetch-Mode: cors
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
+# 响应
+Access-Control-Allow-Headers: X-Requested-With, Content-Type
+Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
+Access-Control-Allow-Origin: *
+Connection: keep-alive
+Content-Type: application/json
+Date: Sat, 21 Dec 2019 15:32:47 GMT
+Transfer-Encoding: chunked
+
+# 服务器打印结果
+Host: http://local.notetest.com:81 Method: OPTIONS
+```
+当预检请求通过,之后的 post 请求就会当作实际的请求发送出去,这个时候的请求和响应头信息如下
+```
+#请求
+Request URL: http://localhost:8080/
+Request Method: POST
+Remote Address: [::1]:8080
+Referrer Policy: no-referrer-when-downgrade
+Provisional headers are shown
+Accept: application/json, text/plain, */*
+Content-Type: application/json;charset=UTF-8
+Origin: http://local.notetest.com:81
+Referer: http://local.notetest.com:81/
+Sec-Fetch-Mode: cors
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
+
+# 响应
+Access-Control-Allow-Headers: X-Requested-With, Content-Type
+Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
+Access-Control-Allow-Origin: *
+Connection: keep-alive
+Content-Type: application/json
+Date: Sat, 21 Dec 2019 15:32:47 GMT
+Transfer-Encoding: chunked
+
+# 实际请求发送后服务器打印结果
+Host: http://local.notetest.com:81 Method: OPTIONS
+Host: http://local.notetest.com:81 Method: POST
+```
+
+细心的你会发现后台一直有 cookie 返回,前端却没有接收到,虽然前端加上了 withCredentials, 也没有
+
+!!!那是因为如果需要共享资源`Access-Control-Allow-Origin`头部字段不能是`*`
 
 
 
