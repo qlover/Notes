@@ -2679,102 +2679,97 @@ req 发送 origin 字段, res 响应`Access-Control-Allow-Origin`,如果 origin 
 
 *注意 application/json 或者是 application/xml 已经不满足简单请求,所以该 content-type 就应该需要预检*
 
-以下是一次简单的跨域请求:
 
-为了演示一次跨域,客户端访问在 http://local.notetest.com:81 浏览器环境
+下面来构建一次简单请求和需要预检请求的环境
+
+首先由于 Chrome 的 `Provisional headers are shown` 临时响应头问题所以客户端运行在FF `http://local.notetest.com:81` 浏览器环境
+
+服务器用 node http 模块 `http://localhost:8080` 起一个服务器(个从觉得简单快捷些)，关于 node 可详情可见[https://nodejs.org/dist/latest-v8.x/docs/api/http.html](https://nodejs.org/dist/latest-v8.x/docs/api/http.html)
+
+#### 简单请求
+
+客户端请求:
 ```js
 // http://local.notetest.com:81/index.html
 const url = 'http://localhost:8080'
-// 浏览器环境运行
-require(['require.config'], function ( config ) {
-  require(['axios'], function _axios( axios) {
-    axios.get(url).then( function( res ){
-      console.log(res)
-    })
-  })
-})
+// 浏览器使用原生二代 fetch 请求
+fetch(new Request(url)).then( r => console.log(r))
 ```
-服务器端访问到 http://localhost:8080
+node 服务器端：
 ```js
 const http = require('http')
 http.createServer( (request, response) => {
-  const host = request.headers.origin// 请求地址
-  const method = request.method// 请求方式
-  console.log(`Host: ${host} Method: ${method}`) 
-  response.writeHead(200, { // 直接响应 200 状态码
-    'Content-Type': 'text/plain', // 普通文本
-    'Access-Control-Allow-Origin' : '*',
-    'Access-Control-Allow-Headers' : 'X-Requested-With',
-    'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
-    'Set-Cookie' : 'money=100;httpOnly;expires=60', // 携带一个 cookie
+  const host = request.headers.origin // 请求地址
+  // 打印源地址和请求方法
+  console.log(`Host: ${host} Method: ${request.method}`) 
+  response.writeHead(200, {
+    'Content-Type': 'text/plain', // 简单请求普通文本
+    'Access-Control-Allow-Origin' : '*', // 允许所有源地址跨域访问
+    'Set-Cookie': 'money=1000' // 默认始终设置一个 cookie 
   })
-  // 直接返回字符串
   response.end('{ "name" : "qlover", "age" : 21 }')
 }).listen(8080)
 ```
 
-浏览器中直接访问, 服务器会在命令行中打印出 `Host: http://local.notetest.com:81 Method: GET`
-
-请求和响应的头部信息
+浏览器中直接访问, 服务器会在命令行中打印出 `Host: http://local.notetest.com:81 Method: GET`, 该次请求属于简单请求，请求和响应的头部信息如下
 ```
 # 请求
-Request URL: http://localhost:8080/
-Request Method: GET
-Remote Address: [::1]:8080
-Referrer Policy: no-referrer-when-downgrade
-Accept: application/json, text/plain, */*
-Origin: http://local.notetest.com:81
+请求网址:http://localhost:8080/
+请求方法:GET
+远程地址:127.0.0.1:8080
+版本:HTTP/1.1
+Referrer 政策:no-referrer-when-downgrade
+
+Host: localhost:8080
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
 Referer: http://local.notetest.com:81/
-Sec-Fetch-Mode: cors
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
- */
-# 响应
-Access-Control-Allow-Headers: X-Requested-With
-Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
-Access-Control-Allow-Origin: *
+Origin: http://local.notetest.com:81
 Connection: keep-alive
+Cache-Control: max-age=0
+
+# 响应
+HTTP/1.1 200 OK
 Content-Type: text/plain
-Date: Sat, 21 Dec 2019 15:11:25 GMT
+Access-Control-Allow-Origin: *
+Set-Cookie: money=1000
+Date: Sun, 22 Dec 2019 09:15:08 GMT
+Connection: keep-alive
 Transfer-Encoding: chunked
 
 # 服务器打印信息
 Host: http://local.notetest.com:81 Method: GET
 ```
 
-下面将请求的方式变成  post, 并且设置请求 content-type 指定为 json 格式返回,这样就不满足简单请求
+上述的简单请求使用 fetch 直接成功，后台设置`Access-Control-Allow-Origin`字段为`*`,简单请求直接通过，请求 content-type 指定为 json 格式返回,这样就不满足简单请求
 
 ```js
-require(['require.config'], function ( config ) {
-  require(['axios'], function _axios( axios) {
-    axios.post(url,{
-      'Content-Type' : 'application/json'
-    }).then( function( res ){
-      console.log(res)
-    })
-  })
-})
+fetch(new Request(url, {
+  mode: 'cors',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})).then( r => console.log(r))
 ```
 node 服务器打印结果为 `Host: http://local.notetest.com:81 Method: OPTIONS`, 说明这个时间已经不再是简单,进行了预检请求,这个时的请求会在前台控制台打印抛出错误
 ```
 Access to XMLHttpRequest at 'http://localhost:8080/' from origin 'http://local.notetest.com:81' has been blocked by CORS policy: Request header field content-type is not allowed by Access-Control-Allow-Headers in preflight response.
 ```
-这个时候的服务器端并未允许 content-type 字段,并且响应数据还只是 text/plain 所以会报错,接下来允许 content-type 字段并改变服务器的响应内容为 json
+这个时候的服务器端并未允许 content-type 字段,并且响应数据还只是 text/plain 所以会报错,接下来 node 允许`Content-Type`字段并改变服务器的响应内容为 json
 
 ```js
-const http = require('http')
 http.createServer( (request, response) => {
-  console.log(request.headers)
-  const host = request.headers.origin// 请求地址
-  const method = request.method// 请求方式
-  console.log(`Host: ${host} Method: ${method}`) 
-  response.writeHead(200, { // 直接响应 200 状态码
-    'Content-Type': 'application/json', // json 格式
-    'Access-Control-Allow-Origin' : '*',
-    'Access-Control-Allow-Headers' : 'X-Requested-With, Content-Type',
-    'Access-Control-Allow-Methods' : 'PUT,POST,GET,DELETE,OPTIONS',
-    'Set-Cookie' : 'money=100;httpOnly;expires=60', // 携带一个 cookie
+  const host = request.headers.origin // 请求地址
+  // 打印源地址和请求方法
+  console.log(`Host: ${host} Method: ${request.method}`) 
+  response.writeHead(200, {
+    'Content-Type': 'application/json', // 返回 json
+    'Access-Control-Allow-Origin' : '*', // 允许所有源地址跨域访问
+    'Access-Control-Allow-Headers' : 'Content-Type', // 允许请求通过 Content-Type 字段
+    'Set-Cookie': 'money=1000' // 默认始终设置一个 cookie 
   })
-  // 直接返回字符串
   response.end('{ "name" : "qlover", "age" : 21 }')
 }).listen(8080)
 ```
@@ -2782,23 +2777,33 @@ http.createServer( (request, response) => {
 此时会先以 OPTION 方式进行预检请求,并且请求响应头部如下:
 ```
 # 请求
-Request URL: http://localhost:8080/
-Request Method: OPTIONS
-Remote Address: [::1]:8080
-Referrer Policy: no-referrer-when-downgrade
+请求网址:http://localhost:8080/
+请求方法:OPTIONS  # 请求方法为 options
+远程地址:127.0.0.1:8080
+版本:HTTP/1.1
+Referrer 政策:no-referrer-when-downgrade
+
+Host: localhost:8080
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Access-Control-Request-Method: GET
 Access-Control-Request-Headers: content-type
-Access-Control-Request-Method: POST
-Origin: http://local.notetest.com:81
 Referer: http://local.notetest.com:81/
-Sec-Fetch-Mode: cors
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
-# 响应
-Access-Control-Allow-Headers: X-Requested-With, Content-Type
-Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
-Access-Control-Allow-Origin: *
+Origin: http://local.notetest.com:81
 Connection: keep-alive
+Cache-Control: max-age=0
+
+
+# 响应
+HTTP/1.1 200 OK
 Content-Type: application/json
-Date: Sat, 21 Dec 2019 15:32:47 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type
+Set-Cookie: money=1000
+Date: Sun, 22 Dec 2019 09:12:16 GMT
+Connection: keep-alive
 Transfer-Encoding: chunked
 
 # 服务器打印结果
@@ -2807,31 +2812,145 @@ Host: http://local.notetest.com:81 Method: OPTIONS
 当预检请求通过,之后的 post 请求就会当作实际的请求发送出去,这个时候的请求和响应头信息如下
 ```
 #请求
-Request URL: http://localhost:8080/
-Request Method: POST
-Remote Address: [::1]:8080
-Referrer Policy: no-referrer-when-downgrade
-Provisional headers are shown
+请求网址:http://localhost:8080/
+请求方法:GET
+远程地址:127.0.0.1:8080
+版本:HTTP/1.1
+Referrer 政策:no-referrer-when-downgrade
+
+Host: localhost:8080
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0
 Accept: application/json, text/plain, */*
-Content-Type: application/json;charset=UTF-8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Content-Type: application/json;charset=utf-8
+Content-Length: 35
 Origin: http://local.notetest.com:81
+Connection: keep-alive
 Referer: http://local.notetest.com:81/
-Sec-Fetch-Mode: cors
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.75 Safari/537.36
 
 # 响应
-Access-Control-Allow-Headers: X-Requested-With, Content-Type
-Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS
-Access-Control-Allow-Origin: *
-Connection: keep-alive
+HTTP/1.1 200 OK
 Content-Type: application/json
-Date: Sat, 21 Dec 2019 15:32:47 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type
+Set-Cookie: money=1000
+Date: Sun, 22 Dec 2019 08:37:57 GMT
+Connection: keep-alive
 Transfer-Encoding: chunked
 
 # 实际请求发送后服务器打印结果
 Host: http://local.notetest.com:81 Method: OPTIONS
 Host: http://local.notetest.com:81 Method: POST
 ```
+
+上述完成了一次非简单请求，仔细的话会发现，每次 node 都在响应付加了 cookie ，前端的 cookie 却一致获取不到，并且每一次的请求头都没有 cookie 信息，这是因为前后都没有允许跨域通过响应内容，接下来利用`Access-Control-Allow-Credentials`字段允许前后端通过响应内容,并且要注意 origin 只能是具体的源地址
+
+```js
+fetch(new Request(url, {
+  mode: 'cors',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  credentials : 'include'
+})).then( r => console.log(r))
+```
+
+```js
+http.createServer( (request, response) => {
+  const host = request.headers.origin // 请求地址
+  // 打印源地址和请求方法
+  console.log(`Host: ${host} Method: ${request.method}`) 
+  response.writeHead(200, {
+    'Content-Type': 'application/json', // 简单请求普通文本
+    'Access-Control-Allow-Credentials': true, // 允许跨域通过 cookie 
+    'Access-Control-Allow-Origin' : host, // 只能是具体源地址
+    'Access-Control-Allow-Headers' : 'Content-Type',
+    'Set-Cookie': 'money=1000' // 默认始终设置一个 cookie 
+  })
+  response.end('{ "name" : "qlover", "age" : 21 }')
+}).listen(8080)
+```
+
+预检查请求的请求和响应如下：
+```
+# 请求
+请求网址:http://localhost:8080/
+请求方法:OPTIONS
+远程地址:127.0.0.1:8080
+版本:HTTP/1.1
+Referrer 政策:no-referrer-when-downgrade
+
+Host: localhost:8080
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: content-type
+Referer: http://local.notetest.com:81/
+Origin: http://local.notetest.com:81
+Connection: keep-alive
+Cache-Control: max-age=0
+
+# 响应
+HTTP/1.1 200 OK
+Content-Type: application/json
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin: http://local.notetest.com:81
+Access-Control-Allow-Headers: Content-Type
+Set-Cookie: money=1000; path=/ # 服务器返回 cookie
+Date: Sun, 22 Dec 2019 09:04:18 GMT
+Connection: keep-alive
+Transfer-Encoding: chunked
+
+# 服务器打印
+Host: http://local.notetest.com:81 Method: OPTIONS
+```
+
+实际请求:
+
+```
+# 请求
+
+请求网址:http://localhost:8080/
+请求方法:GET
+远程地址:127.0.0.1:8080
+版本:HTTP/1.1
+Referrer 政策:no-referrer-when-downgrade
+
+
+Host: localhost:8080
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Referer: http://local.notetest.com:81/
+Content-Type: application/json
+Origin: http://local.notetest.com:81
+Connection: keep-alive
+Cookie: money=1000 # !!! 第二次实际请求已经将上一次的预检请求携带上了
+Cache-Control: max-age=0
+
+# 响应
+HTTP/1.1 200 OK
+Content-Type: application/json
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin: http://local.notetest.com:81
+Access-Control-Allow-Headers: Content-Type, Set-Cookie, *
+Set-Cookie: money=1000; path=/ # 服务器同样返回 cookie
+Date: Sun, 22 Dec 2019 09:06:16 GMT
+Connection: keep-alive
+Transfer-Encoding: chunked
+
+# 服务器打印
+Host: http://local.notetest.com:81 Method: OPTIONS
+Host: http://local.notetest.com:81 Method: GET
+```
+
+以上就是跨域时会遇见的三种情况
+
+## 缓存
 
 
 
