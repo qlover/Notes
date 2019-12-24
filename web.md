@@ -3125,6 +3125,65 @@ Host: http://local.notetest.com:81 Method: GET
 
 # JavaScript 进阶(函数式，高阶函数)
 
+先来一段理论上的话：函数式编程是一种编程范式-一种构建计算机程序的结构和元素的方式-将计算视为对数学函数的评估，并且避免了状态和可变数据的更改,来自[wiki](https://en.wikipedia.org/wiki/Functional_programming)
+
+## 纯函数(Pure functions)
+
+如果给定相同的参数，它将返回相同的结果，并且不会引起任何明显的副作用,这个副作用就是不会修改全局对象或通过引用传递参数的变量，也就是每一个函数，每一个功能都是独立的，不会影响到程序其它任何一处地方
+
+
+首先借作者 [TK](https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/) 的一个例子:
+```js
+let PI = 3.14
+const calculateArea = radius => radius * radius * PI
+console.log(calculateArea(10)) //=> 314
+```
+
+这个方法可以接收一个半径作为参数,返回为这个半径的圆的面积,但是如果当变量 PI 的值被改变,那们就违背了,给定相同的参数相同的结果的这一定义,因为一个纯函数是不是*不会修改全局对象或通过引用传递参数的变量*,下面是另一个例子，如何将上面方法变成一个纯函数
+
+```js
+let PI = 3.14
+const calculateArea = (radius, pi) => radius * radius * pi
+console.log( calculateArea(10, PI) )
+```
+
+如果用之前的方法将 radius 的值变成 100,那么返回结果就会变成 31400,也就是说上上一个例子传入的参数和返回的结果返回了不同的结果，不纯，而这个例子就不会出现上面所说传入参数和返回参数不相同的情况，纯
+
+## 从声明式转变到命令式
+
+我常发现有时候,身边的伙伴会将一些简单的情事给复杂化,且有时候对自己的代码没有自信,常常出现问题不能及时定位到关键地方,比如有这样一个需求，将一组数据中的所有数值相加,这组数据中可以能为字符串,也有可能有字符串数字,如下
+
+```js
+let withholds = [ 3, 'good', '7a', '5', 'hello','2', '11', 'name']
+
+let total = 0 // 放置一个变量得到累计合
+for (let i = 0; i < withholds.length; ++i) {
+  if (!isNaN(withholds[i])) { // 判断是否是一个数字
+    total += parseInt(withholds[i]) // 将这个元素转换成数字并累加
+  }
+}
+console.log(total, typeof total) //=> 21 'number'
+
+let sum = withholds
+  .filter( v => !! +v ) // 过滤到不是数字的元素
+  .map( v => +v ) // 将这个元素转换成数字
+  .reduce( (prev, next) => prev + next ) // 累加
+console.log(sum, typeof sum) //=> 21 'number'
+```
+不难发现吧，使用 for 循环的方式，不仅用了更多的变量,并且逻辑判断上也做了处理代码上也显得臃肿紧凑,想想，如果当 isNaN 判断数字变成正则，又或者还是用 parseInt() 判断是否是一个数字时,不就显得枯燥和复杂吗?而上述例子的下面的写法中,一行做一件事,并且也没有使用其它变量或方法,逻辑特别清晰,维护和修改起来也特别简单,是你将会怎么选择呢?
+
+
+## 高阶函数
+
+高阶函数时，指的就是是:
+
+1. 将函数作为函数的参数
+2. 将函数作为返回值
+
+
+
+
+
 ## 组合函数
 ```javascript
 // compse of redux
