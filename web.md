@@ -3249,6 +3249,27 @@ AOP 方式，将函数延迟执行效果
 
 ## 编译函数
 
+# javascript 类库--- [Lodash](https://lodash.com/)
+
+`A modern JavaScript utility library delivering modularity, performance & extras.`
+
+是一个一致性、模块化、高性能的 JavaScript 实用工具库。
+
+借网上的一个总结：
+lodash 提供的函数主要分为以下几类:
+
+- Array，适用于数组类型，比如填充数据、查找元素、数组分片等操作
+- Collection，适用于数组和对象类型，部分适用于字符串，比如分组、查找、过滤等操作
+- Function，适用于函数类型，比如节流、延迟、缓存、设置钩子等操作
+- Lang，普遍适用于各种类型，常用于执行类型判断和类型转换
+- Math，适用于数值类型，常用于执行数学运算
+- Number，适用于生成随机数，比较数值与数值区间的关系
+- Object，适用于对象类型，常用于对象的创建、扩展、类型转换、检索、集合等操作
+- Seq，常用于创建链式调用，提高执行性能（惰性计算）
+- String，适用于字符串类型
+
+和之前 axios 一样下面就进入 [lodash 的源码](https://cdn.bootcss.com/lodash.js/4.17.15/lodash.js
+)
 
 # 框架/库(jQuery-raw,Vue,React,Angluar)
 
