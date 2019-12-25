@@ -1850,6 +1850,12 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 
 # JavaScript 基础(函数一等公民,闭包,原型,继承,this,三种对象(内置,宿主...))
 
+## 类型转换
+
+### 隐式转换
+
+### 强制转换
+
 ## 三种对象
 
 - 原生对象：Object、Function、Array、String、Boolean、Number、Date、RegExp、Error、EvalError、RangeError、ReferenceError、SyntaxError、TypeError、URIError、Global
@@ -3270,6 +3276,15 @@ lodash 提供的函数主要分为以下几类:
 
 和之前 axios 一样下面就进入 [lodash 的源码](https://cdn.bootcss.com/lodash.js/4.17.15/lodash.js
 )
+
+### Core lodash 核心
+
+
+
+
+
+
+
 
 # 框架/库(jQuery-raw,Vue,React,Angluar)
 
