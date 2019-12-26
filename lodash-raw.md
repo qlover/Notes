@@ -2,10 +2,13 @@
 以函数为单位,分析每个函数实现的奇妙逻辑和思想
 
 
-# 类型判断
+# 类型判断--Lang
 
 - Object.prototype.hasOwnProperty(prop) 判断对象自身是否有某个属性
 - Object.prototype.propertyIsEnumerable() 指定属性是否可以被枚举
+- Number.isNaN()
+- Function.prototype.length
+- Function.length
 
 ## isArguments 
 
@@ -143,6 +146,120 @@ console.log(typeOfNaN(NaN)) //=>"Number NaN"
 其实什么全局的 isNaN 也好，还是ES5 加强后的 `Number.isNaN` 或者是 NaN 本身,理解 NaN 是什么，从什么角度才是最重要的，全局上理解 NaN 则可以看作是一个其是否是一个可以被转换成数字类型的值,从 ES5 加强后的可以看作是一个其是否是一个可以非数字的数值类型的值
 
 Number.isNaN 则是将需要判断数值 value 是 NaN 那么返回 true，否则返回 false，这样就可以避免掉使用全局的在理解上的混淆, lodash 我想也是因为这样的吧
+
+
+## isEmpty
+
+lodash 将下面几种视为空:
+1. 一个没有可以枚举属性的对象
+2. 一个 length 为 0 的 `arguments`||`空数组`||`缓冲区`|| 字符串 ||  jQuery 对象集合
+3. size 为 0 的 map || set
+4. 函数始终为空
+
+```js
+console.log( lodash.isEmpty(null) ) // => true
+console.log( lodash.isEmpty(true) ) // => true
+console.log( lodash.isEmpty('1') ) // => false
+console.log( lodash.isEmpty(1) ) // => true
+console.log( lodash.isEmpty([1, 2, 3]) ) // => false
+console.log( lodash.isEmpty({ 'a': 1 }) ) // => false
+```
+
+需要注意的是，三个 length
+1. Function.length 作为 Function 构造器的 length 属性，始终为 1，且不可枚举
+2. Function.prototype.length 函数的形参个数
+3. argument.length 函数的实参个数
+
+```js
+console.log( Function.length ) //=> 1
+console.log( function(){}.length ) //=> 0
+console.log( function(a,b){}.length ) //=> 2
+console.log( (function(a,b){ return arguments.length}(1)) ) //=> 1
+console.log( ((a,b,c)=>{}).length ) //=> 3
+```
+lodash.isEmpty 会将一个函数当作空，不管该函数有多少个形参或实参，这里说起函数下面看一个 `isNative` 的方法
+
+### isNative 判断一个参数是否为原生函数
+
+原生函数就像是数组的 join,split,push 等这类函数,也就是由 JavaScript 实现的函数,但是该方法不包括在 lodash 核心中
+
+```js
+console.log( lodash.isNative( lodash.isEmpty ) ) //=> false
+console.log( lodash.isNative( [1,2,3].push ) ) //=> true
+```
+
+## eq
+
+先看看 ECMAScript 规定的几个内部比较规范，可能会更好理解 eq 方法，以 x,y 两个未知数做比较有以下几可能:
+
++ 恒等于*与 SameVlue 对比多处理了有符号数和 NaN 情况* [Strict Equality Comparison](http://ecma-international.org/ecma-262/6.0/#sec-strict-equality-comparison)
+  1. x y 两个数类型不同则为 false
+  2. x 为 undefined 或 null 直接返回 true
+  3. 当 x 为 Number
+  	- x 或 y 其中一个是 NaN 返回 false
+  	- 如果相等返回 true
+  	- `-0`与`+0`, `+0`与`-0` true
+  	- 其他情况一律返回 false
+  4. 当 x 为 String
+  	- x 与 y 索引上的每一位都相等，则返回 true
+  	- 其它一律 false
+  5. 当 x 为 Boolean
+  	- x 与 y 除非都为 true 或 false, 返回 true
+  	- 其它一律 false
+  6. 当 x 为 Symbol, 只有自己和自己相等
+  7. 当 x 为 Object, 只有自己和自己相等
+  8. 其它情况一律 false
+
++ SameValue [SameValue](http://ecma-international.org/ecma-262/6.0/#sec-samevalue)
+	1. 如果类型不同返回 false
+	2. x 为 undefined 或 null 返回 true
+	3. 当 x 为 Number
+		- x 与 y 都为 NaN 为相等
+		- `-0`与`+0`, `+0`与`-0` 返回 false
+		- 数值一样返回 true
+		- 其它情况一律 false
+	4. 当 x 为 String, x 与 y 索引上的每一位都相等，则返回 true
+	5. 当 x 为 Boolean,x 与 y 除非都为 true 或 false, 返回 true
+	6. 当 x 为 Symbol, 只有自己和自己相等
+	7. 当 x 为 Object, 只有自己和自己相等
++ SameValueZero [SameValueZero](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
+	1. 如果类型不同返回 false
+	2. x 为 undefined 或 null 返回 true
+		- x 与 y 都为 NaN 为相等
+		- `-0`与`+0`, `+0`与`-0` true
+		- 数值相等返回 true
+		- 其它一律 false
+	3. 当 x 为 Boolean,x 与 y 除非都为 true 或 false, 返回 true
+	4. 当 x 为 Symbol, 只有自己和自己相等
+	5. 当 x 为 Object, 只有自己和自己相等
+
+先多说一句规范中这么多的比较规范, lodash 使用了 `SameValueZero`, 仔细观察三个规范的相同处于不同处，会发现除了在数字比较时 NaN 和 `-0` 与 `+0` 比较有出处，其它地方几乎一样，也就是说，在恒等的基础上将 NaN 和 `-0` 与 `+0` 进行了多一次的判断，上面有提到一个 NaN 的特性不知道还有印象没有，说 JavaScript 中只有 NaN 不恒等自己
+
+```js
+function _eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+console.log( _eq(NaN, NaN) ) //=> true
+console.log( _eq(-0, +0) ) //=> true
+console.log( _eq(1, '1') ) //=> false
+console.log( _eq(null, undefined) ) //=> false
+console.log( _eq(null, {}) ) //=> false
+```
+而由于全局 isNaN 的判断诡异,如果非要利用 isNaN 则可以使用 Number.isNaN 来专门判断是否是一个非数字类型,下面例子与上面例子是恒等的
+```js
+function _eq(value, other) {
+  return value === other || (Number.isNaN(value) && Number.isNaN(other))
+}
+```
+
+## `#`createRelationalOperation 私有方法
+
+该方法是一个 lodash 的私有方法，也是目前为止的第一个函数式的方法
+
+
+
+
+
 
 # 参考链接
 
