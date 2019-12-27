@@ -6,6 +6,7 @@
 
 - Object.prototype.hasOwnProperty(prop) 判断对象自身是否有某个属性
 - Object.prototype.propertyIsEnumerable() 指定属性是否可以被枚举
+- Array.prototype.slice() 截取数组，外排
 - Number.isNaN()
 - Function.prototype.length
 - Function.length
@@ -252,9 +253,159 @@ function _eq(value, other) {
 }
 ```
 
-## `#`createRelationalOperation 私有方法
+## clone 
 
-该方法是一个 lodash 的私有方法，也是目前为止的第一个函数式的方法
+值克隆(如果要深度复制可见完整版本),该方法除了错误对象、函数、DOM 节点和 WeakMaps 基本全都可以完成复制
+
+当然如果说只是要一个复制值那很简单,也就是两个变量交换而已,如果是一个引用类型需要复制，比如说要复制一个数组，我们通常想到的办法则是将数组遍历一次依次返回出一个新的数组，或者是直接借用原生 Array.ptotoype.map, Array.ptotoype.slice 或其它外排方法，直接返回出一个新的数组,话虽是这样说，但是 JavaScript 世界中却没有想的那样简单，下面来看看 `lodash.clone()` 
+
+```js
+let a = [1,2,3]
+let b = lodash.clone(a)
+console.log(a)//=> [ 1, 2, 3 ]
+console.log(b)//=> [ 1, 2, 3 ]
+console.log(a === b)//=> false
+let c = { 'ns' : a, 'name': 'qlover'}
+let d = lodash.clone(c)
+console.log(c)//=> { ns: [ 1, 2, 3 ], name: 'qlover' }
+console.log(d) //=> { ns: [ 1, 2, 3 ], name: 'qlover' }
+console.log(c === d) //=> false
+console.log(c.ns === d.ns) //=> true
+```
+
+可以明显的看出来 clone 做到了值的复制但并没有深度克隆,说起深度克隆我就想起了`jQuery.extend()`,这个方法是真的设计巧妙, jQuery.extend 这个方法没一个形参，却可以接受若干个实参，其中可以像普通值复制一样参数一 target 参数二 source ,又或者是参数一传入布尔值作为深浅复制标识,内部值复制遍历赋值深度克隆则递归,用 arguments 这个特殊对象,在内部将实参整理成固定形参方式，这样不管传入什么参数，其内部的参数组合递归复制是完成深浅复制的特点,而 lodash 的做法与 jQuery.extend 相似，两者都有自己特色。下面是 lodash.clone() 的源方法
+
+```js
+function clone(value) {
+  if (!isObject(value)) {
+    return value;
+  }
+  return isArray(value) ? copyArray(value) : copyObject(value, nativeKeys(value));
+}
+```
+在附上一个私有的 `#`baseSlice 私有方法,该方法和 Array.prototype.slice 一样截取数组的方法
+
+```js
+function _baseSlice(array, start, end) {
+  var index = -1,
+      length = array.length;
+
+	// 保存开始值到数组的最小索引
+  if (start < 0) {
+    start = -start > length ? 0 : (length + start);
+  }
+ 
+	// 保存结束始终不超过数组长度和0以下
+  end = end > length ? length : end;
+  if (end < 0) {
+    end += length;
+  }
+  length = start > end ? 0 : ((end - start) >>> 0);
+  start >>>= 0; 
+  // 遍历赋值
+  var result = Array(length);
+  while (++index < length) {
+    result[index] = array[index + start];
+  }
+  return result;
+}
+```
+
+
+# 数组操作 Array 
+
+## `#`baseEach 私有方法
+
+是创建`baseEach`或`baseEachRight`这两个私有方法的源方法,接收两个参数第一个是迭代回调，第二个是布尔值，可指定从右到左迭代
+
+```js
+function _createBaseFor(fromRight) {
+  return function(object, iteratee, keysFunc) {
+    // ...
+    return object;
+  };
+}
+
+function _baseForOwn(object, iteratee) {
+	// 此处的 false 为 _createBaseFor 传递参数表示是否从右至左遍历
+  return object && _createBaseFor(false)(object, iteratee, Object.keys);
+}
+
+function _createBaseEach(eachFunc, fromRight) {
+  return function(collection, iteratee) {
+    // ...
+    return collection;
+  };
+}
+var baseEach = _createBaseEach(_baseForOwn);
+var baseEachRight = _createBaseEach(_baseForOwn, true);
+```
+
+听说函数式的思想就是将参数,返回,各种部分当作函数来用,也`应证函数是一等人民`
+
+### 基函数 `#`createBaseFor
+
+lodash.forIn 和 lodash.forOwn 的基函数,什么是基函数,可以理解为 lodash.forOwn 函数是由该函数生成,或者是 lodash.forIn 函数的母亲是该函数
+
+这里的两个生成函数并不是核心里面的,但核心中有一个叫 `baseFor` 的重要函数, `baseForOwn` 函数也是由 baseFor 该生成专门用来可遍历`类数组`的函数
+
+```js
+function _createBaseFor(fromRight) {
+  return function(object, iteratee, keysFunc) {
+    var index = -1,
+        iterable = Object(object),
+        props = keysFunc(object),
+        length = props.length;
+
+    while (length--) {
+      var key = props[fromRight ? length : ++index];
+      if (iteratee(iterable[key], key, iterable) === false) {
+        break;
+      }
+    }
+    return object;
+  };
+}
+```
+该方法很简单,就是做一个类数组遍历操作,而这里的对象遍历操作避免了 for...in 操作,可能有的人注意到了。
+`_createBaseFor`
+
+方法可以接收一个参数,表示其是否从右至左遍历,虽然不知道为什么这样,是为了方便也好还是怎样,收集资料后个人觉得可能是因为 for...in 遍历出来的顺序不一定按顺序。
+
+### 基函数 `#`createBaseEach
+```js
+function _createBaseEach(eachFunc, fromRight) {
+  return function _createBaseEach_return(collection, iteratee) {
+    if (collection == null) {
+      return collection;
+    }
+    // 类数组处理
+    if ( !lodash.isArrayLike(collection)) {
+      return eachFunc(collection, iteratee);
+    }
+    // 通常集合处理
+    var length = collection.length,
+        index = fromRight ? length : -1,
+        iterable = Object(collection);
+
+    while ((fromRight ? index-- : ++index < length)) {
+      if (iteratee(iterable[index], index, iterable) === false) {
+        break;
+      }
+    }
+    return collection;
+  };
+}
+```
+
+jQuery 的链式操作应该是10多年前的一个新潮思想, jQuery 的链式操作做到了`do less, write more`其原理就是在每个方法后面返回了 this, 这里看得第一眼就让我想起了链式操作,当集合`collection`是数组走`eachFunc`也好还是对象走`iteratee`最终结果不仅遍历了元素且返回了原集合，该方法内部对`类数组`和通常可遍历的对象都作了处理，如果是类数组则用上面的 `_createBaseFor` 生成的函数作遍历，其余的转换成对象，对对象的属性值作遍历操作最后返回遍历集合, 这整个函数调来调去就是为了生成`baseEach`方法。
+
+1. `createBaseFor` 是生成遍历函数的基函数,也可以理解为抽象类,作用就是可以让一个函数具有遍历功能,`baseFor`就是 createBaseFor 返回的函数,只用来赋值接收
+2. 其次 `baseForOwn` 是专门用来为 baseFor 赋值(其实就是没有 formRight 参数),规定了遍历集合，遍历集合回调和遍历集合的属性集合(这里用的是 Object.keys)
+3. 最后可以理解为最后的实现类,`createBaseEach`方法专门用来生成遍历指定集合，可遍历类数组或通常可遍历对象
+4. 而 `baseEach` 或者是 `baseEachRight` 就是 createBaseEach 暴露出来的最终接口, 
+
+*createBaseFor,createBaseEach 都属于基函数,且这里面每一个函数都 pure*
 
 
 
