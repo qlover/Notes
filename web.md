@@ -260,8 +260,7 @@ HTTP消息由采用ASCII编码的多行文本构成
 
 起始行和  HTTP 消息中的HTTP 头统称为请求头，而其有效负载被称为消息正文
 
-## req
-### 起始行
+## 请求起始行
 
 HTTP请求是由客户端发出的消息，用来使服务器执行动作。起始行 (start-line) 包含三个元素：
 1. HTTP 请求方法 GET | POST | OPTION | DELETE ...
@@ -282,20 +281,18 @@ HTTP请求是由客户端发出的消息，用来使服务器执行动作。起�
     ```OPTIONS * HTTP/1.1```
 3. HTTP 版本 (HTTP version)，定义了剩余报文的结构，作为对期望的响应版本的指示符。
 
-### Header
+### 请求头
 
 来自请求的 (HTTP headers)[https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers] 遵循和 HTTP header 相同的基本结构：不区分大小写的字符串，紧跟着的冒号 (':') 和一个结构取决于 header 的值。 整个 header（包括值）由一行组成，这一行可以相当长
 
-### Body
+### 请求内容
 
 *不是所有的请求都有一个 body*
 例如获取资源的请求，GET，HEAD，DELETE 和 OPTIONS，通常它们不需要 body
 
 有些请求将数据发送到服务器以便更新数据：常见的的情况是 POST 请求
 
-## res
-
-### 状态行
+### 响应状态行
 
 HTTP 响应的起始行被称作 状态行 (status line)，包含以下信息：
 
@@ -306,9 +303,7 @@ HTTP 响应的起始行被称作 状态行 (status line)，包含以下信息：
 一个典型的状态行看起来像这样
 ```HTTP/1.1 404 Not Found```
 
-### Header
-
-### Body
+### 响应主体
 
 不是所有的响应都有 body：具有状态码 (如 201 或 204) 的响应，通常不会有 body
 
@@ -353,11 +348,12 @@ Body 大致可分为三类：
   而谷歌方面，则使用了自己研发的 V8 引擎
 
 
-内核  是否开源  插件支持  应用浏览器 支持操作系统
-Trident 否，但提供接口调用 ActiveX IE  Windows
-Gecko 是，多种协议授权发行，包括MPL、GPL、LGPL NPAPI Firefox Windows,Mac,Linux/BSD
-Blink 是 NPAPI Chrome，Opera  Windows,Mac,Linux/BSD
-Webkit  是，遵从LGPL协议  NPAPI Chrome,Safar  Windows,Mac,Linux/BSD
+内核 |是否开源 | 插件支持 | 应用浏览器 |支持操作系统
+:-: | :-: | :-: | :-: | :-:
+Trident| 否，但提供接口调用 |ActiveX | IE  |Windows
+Gecko |是，多种协议授权发行 | MPL、GPL、LGPL NPAPI |Firefox| Windows,Mac,Linux/BSD|
+Blink |是 | NPAPI |Chrome，Opera | Windows,Mac,Linux/BSD
+Webkit | 是，遵从LGPL协议 | NPAPI | Chrome,Safar | Windows,Mac,Linux/BSD
 
 
 可这样理解，浏览器内核虽然包括三个分支，但其主要就是完成页面渲染的排版引擎
@@ -391,28 +387,27 @@ Webkit  是，遵从LGPL协议  NPAPI Chrome,Safar  Windows,Mac,Linux/BSD
 网页的生成过程，大致可以分成五步：
 
 1. HTML代码转化成DOM
-    - 当服务器返回一个HTML文件给浏览器的时候, 浏览器接受到的是一些字节数据
-    - 根据请求头部信息的编码方式, 对字节流进行编码, 得到 HTML 字符串
-    - 当我们浏览器获得HTML文件后，会自上而下的加载，并在加载过程中进行解析和渲染
-    - 加载说的就是获取资源文件的过程，如果在加载过程中遇到外部 CSS 文件和图片，浏览器会另外发送一个请求，去获取 CSS 文件和相应的图片，`这个请求是异步的，并不会影响 HTML 文件的加载`
-    - DOM 树的构建过程是一个深度遍历过程：当前节点的所有子节点都构建好后才会去构建当前节点的下一个兄弟节点
-    - [HTML 解析器解析](https://blog.csdn.net/greenqingqingws/article/details/19163061)
+  - 当服务器返回一个HTML文件给浏览器的时候, 浏览器接受到的是一些字节数据
+  - 根据请求头部信息的编码方式, 对字节流进行编码, 得到 HTML 字符串
+  - 当我们浏览器获得HTML文件后，会自上而下的加载，并在加载过程中进行解析和渲染
+  - 加载说的就是获取资源文件的过程，如果在加载过程中遇到外部 CSS 文件和图片，浏览器会另外发送一个请求，去获取 CSS 文件和相应的图片，`这个请求是异步的，并不会影响 HTML 文件的加载`
+  - DOM 树的构建过程是一个深度遍历过程：当前节点的所有子节点都构建好后才会去构建当前节点的下一个兄弟节点
+  - [HTML 解析器解析](https://blog.csdn.net/greenqingqingws/article/details/19163061)
 2. CSS代码转化成CSSOM（CSS Object Model）
-    - DOM 和 CSSOM 都是以 Bytes → characters → tokens → nodes → object model. 这样的方式生成最终的数据
-    - `display:none` 的节点不会被加入 Render Tree，而 `visibility: hidden` 则会，所以，如果某个节点最开始是不显示的，设为 `display:none` 是更优的
+  - DOM 和 CSSOM 都是以 Bytes → characters → tokens → nodes → object model. 这样的方式生成最终的数据
+  - `display:none` 的节点不会被加入 Render Tree，而 `visibility: hidden` 则会，所以，如果某个节点最开始是不显示的，设为 `display:none` 是更优的
 3. 结合 DOM 和 CSSOM, 生成一棵渲染树（Render Tree 包含每个节点的视觉信息）
-    - 根据 DOM 和 CSSOM 来构建 Render Tree(渲染树)
-    - 注意渲染树，并不等于 DOM 树，因为一些像 `head` 或 `display:none` 的东西，就没有必要放在渲染树中了
-    - 得到 Render Tree ,然后计算出每个节点在 layout 上的位置
-
+  - 根据 DOM 和 CSSOM 来构建 Render Tree(渲染树)
+  - 注意渲染树，并不等于 DOM 树，因为一些像 `head` 或 `display:none` 的东西，就没有必要放在渲染树中了
+  - 得到 Render Tree ,然后计算出每个节点在 layout 上的位置
 4. 生成布局(layout), 也叫 flow
-    - 即将所有渲染树的所有节点进行平面合成
-    - 前三步都很快, 麻烦点的就是最后这两步
+  - 即将所有渲染树的所有节点进行平面合成
+  - 前三步都很快, 麻烦点的就是最后这两步
 5. 将布局绘制(paint)在屏幕上
-    - 按照算出来的规则,通过显卡,把 layout 画到屏幕上
-    - 当最后一个节点被绘制, 事件 `DomContentloaded` 就会发生
-    - 如果此时的, link css 或者是 img 或是 script 引用的外部资源未从服务器返回
-    - 生成布局(flow)和绘制(paint)这两步，合称为"渲染"（render）
+  - 按照算出来的规则,通过显卡,把 layout 画到屏幕上
+  - 当最后一个节点被绘制, 事件 `DomContentloaded` 就会发生
+  - 如果此时的, link css 或者是 img 或是 script 引用的外部资源未从服务器返回
+  - 生成布局(flow)和绘制(paint)这两步，合称为"渲染"（render）
 
 *以上的五步只是浏览器在第一时间渲染的情况*
 
@@ -1852,7 +1847,11 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 
 ## 类型转换
 
-### 隐式转换
+### 隐式转换 -- 布尔值
+
+JavaScript遇到预期为布尔值的地方（比如if语句的条件部分），就会将非布尔值的参数自动转换为布尔值。系统内部会自动调用Boolean函数
+
+除以下几种值其余都为 `undefined``null``-0``0或+0``NaN``''`（空字符串）其它都会转换成 true,即时是空数组`[]`和空对象`{}`
 
 ### 强制转换
 
@@ -3157,7 +3156,7 @@ console.log( calculateArea(10, PI) )
 
 ## 从声明式转变到命令式
 
-我常发现有时候,身边的伙伴会将一些简单的情事给复杂化,且有时候对自己的代码没有自信,常常出现问题不能及时定位到关键地方,比如有这样一个需求，将一组数据中的所有数值相加,这组数据中可以能为字符串,也有可能有字符串数字,如下
+我常会将一些简单的情事给复杂化,且有时候对自己的代码没有自信,常常出现问题不能及时定位到关键地方,比如有这样一个需求，将一组数据中的所有数值相加,这组数据中可以能为字符串,也有可能有字符串数字,如下
 
 ```js
 let withholds = [ 3, 'good', '7a', '5', 'hello','2', '11', 'name']

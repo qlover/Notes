@@ -13,7 +13,7 @@
 
 ## lodash.isArguments 
 
-判断是否是一个 arguments,也就是函数参数对象, 该对象有两个特点, 一就是 `typeof` 操作符会返回 `object` 并且有 `callee` 属性，lodash 中作了以下几个处理
+判断是否是一个 arguments 对象, arguments 也就是函数参数对象, 是数组的一种`鸭子类型`, 该对象有两个特点, 一就是 `typeof` 操作符会返回 `object` 并且有 `callee` 属性，lodash 中作了以下几个处理
 1. isObjectLike 像是一个对象
 2. 是否有 callee 属性
 3. 并且判断 callee 不可枚举
@@ -678,6 +678,8 @@ function baseIteratee(func) {
 }
 ```
 
+如果参数为回调,会直接返回该回调函数生成一个由传入回调的回调迭代函数,如果是一个对象,这的对象不局限只是 object 任何 typeof 返回的对象都可以,如果为对象则会返回默认的 baseMatches 方法作为返回的回调迭代函数,该函数作用就是判断与两个对象值是否相等,而 baseProperty 是接收一个不是对象的类 Key,最终会返回调用该回调迭代的指定对象的该 key 值
+
 ## `#`baseIsEqual ---位掩码标识
 
 位运算的几个规则:
@@ -1112,11 +1114,367 @@ console.log( isFunction(function (){}))//=> true
 代码很长,但思维缜密,每个部分,每一个方法,属性可以说都是独立于整个类库中,如果说 isArray ES5 已经提供,那么 isFunction 就是只属于它自己的,baseGetTag 也是 lodash.getTag 的基函数
 
 
-## lodash.clone
+## `#`baseValues
+
+`lodash.values`是由该方法生成的,lodash.values 方法返回一个指定对象`可枚举`属性值的数组
+
+```js
+console.log( lodash.values([1,2,3,4,5,6]) ) //=> [ 1, 2, 3, 4, 5, 6 ]
+console.log( lodash.values('hi') ) //=> [ 1, 2, 3, 4, 5, 6 ]
+console.log( lodash.values(100) ) //=> []
+```
+
+baseValues 的具体步骤,操作一得到指定对象的可枚举的属性,Object.keys 可直接获取,操作二 baseEach 遍历出可枚举属性的属性值,只是这个过程中加入了一个`baseMap`操作, baseMap 是实现 map 的基函数,但内部还是用 createBaseEach 完成,回调分别是键,值和当前遍历的对象
+
+*baseMap 基本是由 baseEach 遍历的结果*
+
+## `#`createAssigner 基函数
+
+将 sources 中的对象的属性依次赋值给 target 对象, 同属性时会被覆盖,这里直接借 [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign) 其特点
+
+1. 可直接浅复制一个对象，symbol 类型也可以复制
+2. 可合并对象
+3. 继承属性和不可枚举属性是不能拷贝的
+4. 原始类型会被包装为对象
+5. 异常会打断后续拷贝
+
+这里的主角是 lodash 不是 ES6 下面就来看看 lodash 中的 assign 
+
+createAssigner 接收一个回调`assigner`,该回调主要用来为返回的函数形参 object 添加 rest 参数 sourcces 中对象的属性,也是生成`baseRest`这个私有方法的基函数,lodash 中可接收若干实参的函数基本离不开 baseRest 方法, assign 操作也会离不开 rest 参数所以 createAssigner 最后的返回是被 baseRest 包裹,实际上就是返回了一个 baseRest 方法,可对若干的源对象进行遍历操作
+
+```js
+// ...
+// 为 assigner 回调形参为 3 个以上时提供自定义函数 customizer
+customizer = (assigner.length > 3 && typeof customizer == 'function')
+  ? (length--, customizer)
+  : undefined;
+// 包装成对象
+object = Object(object);
+while (++index < length) {
+  // ...
+  // 注意回调可接收四个参数
+  assigner(object, source, index, customizer);
+}
+// ...
+```
+
+源码的 createAssigner 方法中最值得注意的地方有两处
+
+1. assigner 回调可以接收四个参数,依次为 target 对象,当前复制的源对象 source, 遍历的索引 index, customizer
+2. assigner 第四上参数 customizer, 该参数可以是一个函数, `lodash.assignWith`中有解释,意思就是如果是以 assignWith 这样的方式进行属性复制则可以自定义复制值的最终结果,如果为函数时可以接收五个参数`objValue, srcValue, key, object, source`,可以看作是 createAAssigner 提供的一个钩子函数
+
+### `#`copyObject 私有方法
+
+上述的 createAssigner 回调 assigner, 在 lodash.assign() 或 lodash.assignIn() 方法指定的是 copyObject() 为 assigner, copyObject 的参数二也是直接用 Object.keys 或 for...in 遍历出来的所有属性名数组
+
+```js
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
+function copyObject(source, props, object, customizer) {}
+```
+*该方法只能浅复制*
+
+该方法就注意以下几点:
+1. 空对象会被转换成 true
+2. 如果存在 customizer 则会将五个参数传入回调得到最终的结果作为复制值
+3. 当复制的对象 object 不为 `undefined`,`null`,`-0`,`0或+0`,`NaN`,`''`(空字符串)时会将属性当作一个关键字
+
+`#baseAssignValue()`与`#assignValue()`方法的区别就是, baseAssignValue 是直接用中括号操作符进行赋值,而 assignValue 会进行一次`SameValueZero`的判断,如果不相等则会利用 baseAssignValue 赋值成对象的一个属性，下面则是`_createAssigner`实现过程
+
+```js
+function _eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+function _baseAssignValue(object, key, value) {
+  object[key] = value;
+}
+function _assignValue(object, key, value) {
+  var objValue = object[key];
+  if (!(Object.prototype.hasOwnProperty.call(object, key) && _eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
+    _baseAssignValue(object, key, value);
+  }
+}
+
+function _copyObject(source, props, object, customizer) {
+  var isNew = !object;
+  object || (object = {}); 
+// `undefined`,`null`,`-0`,`0或+0`,`NaN`,`''` 其余都会为 true
+  var index = -1,
+      length = props.length;
+
+  while (++index < length) {
+    var key = props[index];
+    // 自定义的结果值
+    var newValue = customizer
+      // 分别为五个参数
+      // objValue, srcValue, key, object, source
+      ? customizer(object[key], source[key], key, object, source)
+      : undefined;
+
+    if (newValue === undefined) {
+      newValue = source[key];
+    }
+    if (isNew) {
+      _baseAssignValue(object, key, newValue);
+    } else {
+      _assignValue(object, key, newValue);
+    }
+  }
+  return object;
+}
+
+let a = {'name': 'qlover', 'age': 20}
+let b =_copyObject(a, Object.keys(a), { 'c': 100 },
+  function(objValue, srcValue, key, object, source){
+    return 'preix_' + srcValue
+})
+console.log(a)//=> { name: 'qlover', age: 20 }
+console.log(b)//=> { c: 100, name: 'preix_qlover', age: 'preix_20' }
+```
+
+assign,assignIn 和 assignWith 三者在 lodash 中的区别如下
+1. assign 可枚举属性
+2. assignIn 可枚举和不可枚举属性
+3. assignWith 可枚举属性,并提供自定义 customizer
+
+作一个补充:
+
+```js
+function baseRest(func, start) {
+  return setToString(overRest(func, start, identity), func + '');
+}
+```
+核心版本中`#setToString()`方法其实就是`#identity()`方法,这是因为在完整版本中 setToString 可重写对象的 toString 方法
 
 
+## lodash.assign
 
-## lodash.iteratee
+该方法松散的基于`Object.assign()`,作用很简单就是对象的复制,将所有可枚举属性的值从一个或多个源对象复制到目标对象,返回目标对象
+
+assign 与 assignIn 不同,只会复制可枚举属性,也就是说像原型上不可枚举的属性是不会被复制的
+
+但是凡是没有绝对,就比如当利用`JSON.parse()`方法解析一个包含有不可枚举的自身属性时,就是个例外,这里就不得不提一个叫`原型污染`的东西,原型污染就是当一个不可以枚举的属性被重新复制到了目标对象上引起的程序错乱,是前端的一种可利用攻击方式
+
+```js
+let o1 = { a: 1}
+let o2 = {}
+
+console.log(o1.a)//=> 1
+console.log(o2.a)//=> undefined
+
+Object.assign(o2, { b: 2, '__proto__': { a : 10}})
+
+console.log(o1.a)//=> 1
+console.log(o2.a)//=> undefined
+```
+
+利用`Object.assign()`方法对对象 o2 作一个扩展功能,如果`Object.assign()`方法将源对象的`__proto__`属性成功的重写,那么就会影响到所有继承 o2 原型的对象,但在这里还是很安全的并没有发生所期望的事情,下面则就不同了
+
+```js
+let o1 = { a: 1}
+let o2 = {}
+
+console.log(o1.a)//=>1
+console.log(o2.a)//=> undefined
+
+Object.assign(o2, JSON.parse('{ "b": 2, "__proto__": { "a" : 10}}'))
+
+console.log(o1.a)//=> 1
+console.log(o2.a)//=> 10
+```
+
+同样的是利用Object.assign方法,不同的是源对象是一个被 json 解析后的对象, json 解析后的对象有个特点,就是该对象是一个"纯"的对象,非常纯,纯到解析出来的属性全部都是可以枚举的属性
+
+```js
+let o = { b: 1}
+console.log( Object.keys(JSON.parse('{ "b": 2, "__proto__": { "a" : 10}}')) )
+//=> [ 'b', '__proto__' ]
+console.log( Object.keys(o))
+//=> [ 'b' ]
+```
+也就是说如果解析的属性名其原型或本身都会存在时,会丢失属性的修饰,从这里也就不难看出,不管是用 Object.assign 或是用基于 Object.assign 的 lodash.assign 都会存在这样的一个问题
+
+lodash 的解决方案就是利用`Object.prototype.hasOwnProperty()`和`in`运算符,`hasOwnProperty`和`in`都检测一个对象是否含有特定属性,但只有`in`不会忽略原型链上的属性,回到上述的`_baseAssignValue`和`_assignValue`,lodash核心版本中 lodash.assign 是私有方法并没有暴露出来,是因为核心版本中的处理并非到达`_assignValue`方法内部,而完整版中`_assignValue`方法排除了这个可能,这是就是因为 assign 在核心版本中除了 null undefined 这些参数其它都会直接 baseAssignValue 直接赋值
+
+
+# Function
+
+## `#`baseRest
+
+当一个函数可以接收若干个参数,ES5 这之前都提供了一个叫 arguments 的类数组对象,不管是什么实参,一旦传入都会被 arguments 接收到,但 arguments 很特殊不能像通常数组一样使用,ES6 这之后加了一个新特性叫 rest 参数,可以做到像 python `*args` 这样的形参形式,可以接收若干实参的数组,而`lodash.rest`可以理解为 arguments 到 rest 参数的过渡
+
+为了实现像 ES6 这样的 rest 参数 lodash 是这样做的。
+
+```js
+function _overRest(func, start, transform) {
+  // 取函数形参的第1个参数开始，将第一个参数后面的所有参数当作 rest 参数
+  start = Math.max(start === undefined ? (func.length - 1) : start, 0);
+  return function() { // 最终返回的函数，也是最终接收参数的地方
+    // 重置 rest 参数
+    var args = arguments,
+        index = -1,
+        length = Math.max(args.length - start, 0),
+        array = Array(length); // 转换 arguments 的长度数组
+    // arguments 转换成真数组
+    while (++index < length) {
+      array[index] = args[start + index]; // 转置 arguments 的元素到新数组中
+    }
+    index = -1;
+    // 处理 args
+    // 默认 start 为 1 也就是数组第二个元素
+    // 默认就将 start 后所有的元素当作一个新的数组
+    // start 后面的数组当作是回调的真 rest 参数
+    // 而 start 前面的可以看作是回调 rest 参数的固定形参
+    var otherArgs = Array(start + 1);
+    while (++index < start) {
+      otherArgs[index] = args[index];
+    }
+    otherArgs[start] = transform(array);
+    console.log('s>', start, otherArgs)
+    // args 最后作为参数返回给回调
+    // 最后的 args 也是一个真数组
+    return func.apply(this, otherArgs);
+  };
+}
+
+function _identity(value){return value;}
+
+function _baseRest(func, start){
+  return _identity(_overRest(func, start, _identity));
+}
+function _rest(func, start){
+  return _baseRest(func, start);
+}
+```
+
+关键在于 start 参数, start 参数标识了传入实参与 rest 参数间的分隔,也就是将形参部分分成了已知和未知,未知就当作了 rest 参数,函数中应用了这一点,最后将参数传回回调,rest 就完成了
+
+```js
+let revice = _rest(function(name, car){
+  console.log(name, car)
+})
+revice('qlover', 'BMW', 'Audi', 'Alpha') //=> qlover [ 'BMW', 'Audi', 'Alpha' ]
+
+revice = function(name, ...car){
+  console.log(name, car)
+}
+revice('qlover', 'BMW', 'Audi', 'Alpha') //=> qlover [ 'BMW', 'Audi', 'Alpha' ]
+```
+
+## `#`baseMap
+
+返回一个遍历后的新数组,内部使用 baseEach 对参数 collection 进行遍历,同样的会将 value,key,object 三个参数作为形参传递给迭代回调,并且内部维护的`index`作为索引为新数组依次赋值为迭代回调的返回值
+
+```js
+function _baseMap(collection, iteratee) {
+  var index = -1,
+      result = isArrayLike(collection) ? Array(collection.length) : [];
+
+  baseEach(collection, function(value, key, collection) {
+    result[++index] = iteratee(value, key, collection);
+  });
+  return result;
+}
+```
+
+## lodash.sortBy
+
+`Array.prototype.sort([compareFunction(firstEl, secondEl)])` 方法用原地算法对数组的元素进行排序，并返回数组。默认排序顺序是在将元素转换为字符串，然后比较它们的UTF-16代码单元值序列时构建的,`如果compareFunction`省略,元素按照转换为的字符串的各个字符的Unicode位点进行排序
+
+[原地算法](https://en.wikipedia.org/wiki/In-place_algorithm)不依赖额外的资源或者依赖少数的额外资源，仅依靠输出来覆盖输入的一种算法操作,节省内存
+
+以形参a和b为例:
+
+1. compareFunction 返回值小于 0, a 排序到 b 前
+2. compareFunction 返回值大于 0, a 排序到 b 后
+3. compareFunction 返回值等于 0, a,b 位置不变
+
+且 a和b的值都应该是同输入同结果,有点像纯函数,输入什么就会返回什么
+
+下面以 `Array.prototyp.sort` 方法例子:
+
+排列数组:
+```js
+console.log([9,3,-5,1,-2].sort())//=> [ -2, -5, 1, 3, 9 ]
+console.log([9,3,-5,1,-2].sort( (x,y) => x - y ))//=> [ -5, -2, 1, 3, 9 ]
+console.log([9,3,-5,1,-2].sort( (x,y) => x > y ? -1 : 1 ))//=> [ 9, 3, 1, -2, -5 ]
+```
+
+排列对象,排列对象的修改虽然不能直接用数组规则但可以用键的值比较:
+```js
+var users = [
+  { 'car': 'bmw',  'money': 100 },
+  { 'car': 'audi',  'money': 300 },
+  { 'car': 'Alpha',  'money': 200 },
+]
+
+// 以 money 值升序排列
+// console.log( users.sort( (x,y) => x.money - y.money ) )
+/*//=>
+[ { car: 'bmw', money: 100 },
+  { car: 'Alpha', money: 200 },
+  { car: 'audi', money: 300 } ]
+*/
+// 以 money 值升序降序
+console.log( users.sort( (x,y) => x.money > y.money ? -1 : 1 ) )
+/*//=>
+[ { car: 'audi', money: 300 },
+  { car: 'Alpha', money: 200 },
+  { car: 'bmw', money: 100 } ]
+*/
+```
+
+[详见](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)
+
+*该方法属于内排*
+
+而 loadash 核心版本中也以`Array.prototype.srot()`为中心进行排序`#compareAscending()`是 loadash 默认的排序 compareFunction,默认以升序排列
+
+```js
+function _sortBy(collection, iteratee) {
+  var index = 0;
+  iteratee = _baseIteratee(iteratee);
+
+  return _baseMap(_baseMap(collection, function(value, key, collection) {
+    return { 'value': value, 'index': index++, 'criteria': iteratee(value, key, collection) };
+  }).sort(function(object, other) {
+    return _compareAscending(object.criteria, other.criteria) || (object.index - other.index);
+  }), _baseProperty('value'));
+}
+```
+
+sortBy 方法在对 collection 的类型排序时,会将 collection 遍历成一个对象组成的数组,每个对象赋与 index 唯一索引值,利用该索引值排序
+
+
+# Lodash
+
+## `#`LodashWrapper 
+
+lodash 对象的基函数,`lodash()`和`jQuery()`本身的这个方法一样只作为一个工厂方法,返回的对象是工厂返回的`LodashWrapper`实例,就像 jQuery 的 init 实例,下面是给出的 lodash 工厂返回实例构造器源码
+
+```js
+/**
+ * The base constructor for creating `lodash` wrapper objects.
+ *
+ * @private
+ * @param {*} value The value to wrap.
+ * @param {boolean} [chainAll] Enable explicit method chain sequences.
+ */
+function LodashWrapper(value, chainAll) {
+  this.__wrapped__ = value;
+  this.__actions__ = [];
+  this.__chain__ = !!chainAll;
+}
+```
 
 
 
@@ -1139,3 +1497,9 @@ console.log( isFunction(function (){}))//=> true
 - https://blog.csdn.net/li0978/article/details/100714987
 - https://www.cnblogs.com/xianshenglu/p/8386918.html
 - https://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-expressions
+- http://www.ecma-international.org/ecma-262/6.0/index.html
+- http://www.ecma-international.org/ecma-262/7.0/index.html
+- http://www.ecma-international.org/ecma-262/8.0/index.html
+- http://www.ecma-international.org/ecma-262/9.0/index.html
+- https://www.ecma-international.org/ecma-262/10.0/index.html
+- https://tc39.es/ecma262
