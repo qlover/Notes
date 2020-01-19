@@ -1457,24 +1457,377 @@ sortBy 方法在对 collection 的类型排序时,会将 collection 遍历成一
 
 # Lodash
 
-## `#`LodashWrapper 
+## `#`baseCreate
 
-lodash 对象的基函数,`lodash()`和`jQuery()`本身的这个方法一样只作为一个工厂方法,返回的对象是工厂返回的`LodashWrapper`实例,就像 jQuery 的 init 实例,下面是给出的 lodash 工厂返回实例构造器源码
+### Object.create(ptoto[, propertiesObject])
+
+不能以名称而去定义该方法的作用,它并不只是为了创建一个对象,其可以理解为"创建一个继承了指定对象的对象",并且创建后的对象是不存在原型对象,即`prototype`,相比 Object.assign 从 create 名称上来说到不如是用指定对象生成了一个新的对象,所以 Object.create 一个指定对象的新的实例对象,只不过这个指定的对象通常是原型对象
+
+*ES5之前的版本不支持将参数 ptoto 设置为 null*
 
 ```js
-/**
- * The base constructor for creating `lodash` wrapper objects.
- *
- * @private
- * @param {*} value The value to wrap.
- * @param {boolean} [chainAll] Enable explicit method chain sequences.
- */
+function A(){}
+A.prototype.name = 'AA'
+
+let b = Object.create(A.prototype)
+console.log(b.name) //=> AA
+b.__proto__.name = 'BB'
+console.log(A.prototype.name) //=> AA
+
+let c = Object.assign({}, A.prototype)
+console.log(c.name) //=> AA
+c.__proto__.name = 'BB'
+console.log(A.prototype.name) //=> BB
+```
+
+lodash.`#baseCreate()` 私有方法也是实现了 Object.create 方法的作用,其源码如下:
+
+```js
+var baseCreate = (function() {
+  // 准备全新的构造器
+  function object() {}
+  return function(proto) {
+    if (!isObject(proto)) {
+      return {};
+    }
+    // 如果支持 Object.create 则直接使用
+    if (objectCreate) {
+      return objectCreate(proto);
+    }
+    // 准备对象实例化原型为指定原型
+    object.prototype = proto;
+    var result = new object;
+    // 丢掉返回对象的类原型对象
+    object.prototype = undefined;
+    return result;
+  };
+}());
+```
+## LodashWrapper
+
+以下是摘录 lodash 与 LodashWrapper 部分源码:
+
+```js
+function _Lodash(){}
+_Lodash.prototype.name = 'AA'
+function _LodashWrapper(){}
+console.log( (new _LodashWrapper()).name ) //=> undefined
+
+// 指定 _LodashWrapper 原型只是以 _Lodash.prototype 对象创建出来的新对象
+// 也就是说这个新对象只是 _Lodash.prototype 的一个实例对象,并不就是 _Lodash.prototype 这个原型对象本身
+// 而这个对象的 __proto__ 指向的是 _Lodash.prototype 
+// 也就是 _LodashWrapper.prototype 实例对象继承的 _Lodash 原型对象
+_LodashWrapper.prototype = Object.create(_Lodash.prototype)
+_LodashWrapper.prototype.constructor = _LodashWrapper
+
+console.log( (new _LodashWrapper()).name ) //=> AA
+_Lodash.prototype.age = 20
+console.log( (new _LodashWrapper()).age ) //=> 20
+console.log( _LodashWrapper.prototype.__proto__ == _Lodash.prototype ) //=> true
+```
+
+`_Lodash`与`_LodashWrapper`原型之间的关系,类比 jQuery 中 `init.prototype === jQuery.fn === jQuery.prototype` 三者关系,该构造器 lodash 的核心,链式调用也主要由该对象维护,下面是 lodash 构造器和 LodashWarpper 构造器源码:
+
+```js
+function lodash(value) {
+  return value instanceof LodashWrapper
+    ? value
+    : new LodashWrapper(value);
+}
 function LodashWrapper(value, chainAll) {
   this.__wrapped__ = value;
   this.__actions__ = [];
   this.__chain__ = !!chainAll;
 }
+LodashWrapper.prototype = baseCreate(lodash.prototype);
+LodashWrapper.prototype.constructor = LodashWrapper;
 ```
+LodashWrapper 可接收两个参数,`value`为实例的`__wrapped__`提供属性值, lodash 构造器接收的参数也会由 LodashWrapper 包裹,就是 lodash 工厂生产的对象,而 LodashWrapper 的原型是 lodash 原型 lodash.prototype 的一个`实例对象`,并非是直接指向 lodash 原型,也就是说作为一个构造器或作为一个类 LodashWrapper 原型是 lodash 原型实例,那么 LodashWrapper 实例的`__proto__.__proto__`则是 lodash 原型
+
+```js
+let wrapper = new LodashWrapper('bmw')
+console.log( wrapper.__proto__.__proto__ === lodash.prototype ) //=> true
+```
+
+LodashWrapper 类在 lodash 核心版本中有三个属性它们分别是,`__chain__`、`__wrapped__`和`__actions__`,而完整版本中操作五个属性`__chain__`、`__wrapped__`、`__actions__`、`__index__`和`__values__`
+
+### `__chain__` mixin 混入时指定
+
+该属性描述了当前实例调用方法是否可以进行链式(seq)操作,类比 jQuery 的链式操作,jQuery 中是以方法返回的 this 为连接条件,loash 则是利用当前实例当前是否有`__chain__`属性作为连接条件
+
+*在核心版本中可以在`mixin`方法中见到为提供 seq*
+
+规定了某些方法是否可以或者不可以`chain`其实在内部 mixin 方法中混入时候已经决定,因为 mixin 这个方法本身而言,参数 options 是决定是否将方法 chain,其默认是开启的, 但 LodashWrapper 实例默认是未启用方法链调用的, mixin 方法是首先选择了前者,后才选择了后者,可以见其源码
+
+```js
+// ...
+// 参数校验时是否添加为 seq 方法
+var chain = !(isObject(options) && 'chain' in options) || !!options.chain,
+    isFunc = isFunction(object);
+// ...
+var chainAll = this.__chain__; // 当前 LodasWrapper 实例显示指定的 __chain__ 属性
+// 优先使用参数校验后的判断
+// 再使用 chainAll 显示指定
+console.log(methodName +' chain<'+ chain)
+if (chain || chainAll) {
+  // 确定启用 seq 调用
+  var result = object(this.__wrapped__),
+      /* 向 __actions__ 队列中添加操作记录 */
+      actions = result.__actions__ = copyArray(this.__actions__);
+
+  actions.push({ 'func': func, 'args': arguments, 'thisArg': object });
+  result.__chain__ = chainAll;
+  // 并且会返回一个新的 LodashWrapper 实例!!!
+  return result;
+}
+// 非 seq 调用则直接普通函数调用
+// 这也标识 seq 断开
+return func.apply(object, arrayPush([this.value()], arguments));
+// ...
+```
+
+所以在使用 mixin 方法的时候需要注意,是否要对混入到 seq 中,且如果混入 seq 方法最后返回的是一个全新的 LodasWrapper 实例
+
+下面是 mixin 中添加一行 console 的打印结果试例:
+
+```js
+let wrapper = new LodashWrapper([2,3,4,1])
+console.dir( wrapper.map(v => v + 10) )
+// map chain<true
+/*
+LodashWrapper {
+  __wrapped__: [ 2, 3, 4, 1 ],
+  __actions__: [ { func: [Function: map], args: [Object], thisArg: [Function] } ],
+  __chain__: false
+}
+ */
+
+console.dir( wrapper )
+/*
+LodashWrapper {
+  __wrapped__: [ 2, 3, 4, 1 ],
+  __actions__: [],
+  __chain__: false
+}
+ */
+
+console.dir( wrapper.map(v => v + 10).max() )
+// map chain<true
+// max chain<false
+//=> 14
+```
+
+当调用链式调用到 max 时 chain 是被 mixin 定义为 false,所以 max 就是当前 seq 的末尾
+
+#### `__chain__` LodashWrapper 实例指定
+
+那么如果当 chain 在 LodashWrapper 层面上是开启,如果当前 seq 已经到末尾,则不会向上面所述,直接普通函数调用返回结果
+
+```js
+let wrapper = new LodashWrapper([2,3,4,1], true)
+console.dir( wrapper.map(v => v + 10).max() )
+/*LodashWrapper {
+  __wrapped__: [ 2, 3, 4, 1 ],
+  __actions__: [
+    { func: [Function: map], args: [Object], thisArg: [Function] },
+    {
+      func: [Function: max],
+      args: [Arguments] {},
+      thisArg: [Function]
+    }
+  ],
+  __chain__: true
+}*/
+```
+
+结果已经不再是 14 而是一个返回的 LodashWrapper 包裹对象,且`__actions__`记录的最后一次操作是 max,这之后可以一直进行 seq 操作,直到调用了 lodash 原型上的 value 或 valueOf 方法终结 seq, 而原型上的 value 是由`#baseWrapperValue()`生成
+
+### `__wrapped__` -- `#baseWrapperValue`
+
+该属性表现的形式为当作实例的操作的值,初始是直接接收构造传入的值,现在设`__chain__`为实例指定,那么
+```js
+let wrapper = new LodashWrapper([2,3,4,1], true)
+console.dir( wrapper.map(v => v + 10).max().__wrapped__ )
+//=> [ 2, 3, 4, 1 ]
+```
+
+`__wrapped__`竟然不是计算后的值,原因就是每一次 seq 操作后都会返回一个新的包裹对象,并且每一次传入构造的值都是初始值,直到我发现了`#baseWrapperValue`
+
+seq 操作只是一个系列操作,如果末尾方法不是 chain 方法,则可以直接返回操作结果,但如果不是 chain 方法或者 LodashWrapper 是 chain 实例,不管是怎样的 seq 操作,每一步操作结果并非是记录的,但每一步操作是被`__actions__`队列维护
+
+baseWrapperValue 从接收到初始化的值,就是最初传入的构造器的 value 开始,分别从`__actions__`队列中一条一条赋值结果,最后的 action 操作结果就是 baseWrapperValue 的返回最后的结果
+
+以下是源码:
+
+```js
+function baseWrapperValue(value, actions) {
+  var result2 = value;
+  return reduce(actions, function(result, action) {
+    return action.func.apply(action.thisArg, arrayPush([result], action.args));
+  }, result2);
+}
+```
+
+## chain
+
+如果 seq 最后一个方法不是 chain 方法,则会直接返回最终的值,但如果实例化时的 LodashWrapper 对象显示指定是否 chain 则必须要等到 value 方法才会终结 seq,而上述是直接`new LodashWrapper()`,但是 lodash 中并没有暴露该包裹的构造器,对外的接口只有`lodash()`,lodash 构造器又不能显示指定是否 chain 对象
+
+这个时候`lodash.chain()`方法就起到了作用, chain 方法就是为 LodashWrapper 包裹对象指定显示 seq 的接口
+
+```js
+console.log(lodash([2,3,4,1])
+  .map(v => v + 10)
+  .sort()
+  .max()
+)
+//=> 14
+console.log(lodash.chain([2,3,4,1])
+  .map(v => v + 10)
+  .sort()
+  .max()
+)
+/*LodashWrapper {
+  __wrapped__: [ 2, 3, 4, 1 ],
+  __actions__: [
+    { func: [Function: map], args: [Object], thisArg: [Function] },
+    { func: [Function: tap], args: [Object], thisArg: [Function] },
+    {
+      func: [Function: max],
+      args: [Arguments] {},
+      thisArg: [Function]
+    }
+  ],
+  __chain__: true
+}*/
+```
+
+使用这个方法的时候需要注意的就是`原型`和`静态`都有这样的方法,核心版本中 lodash 原型上是没有 chain 方法的,只会将 chain 当作一个操作,以下摘录至 lodash 完整版本
+
+```js
+lodash.prototype.chain = function(){
+  return lodash.chain(this)
+}
+console.log(lodash([2,3,4,1])
+  .chain()
+  .map(v => v + 10)
+  .sort()
+  .max()
+  .value()
+)
+// => 14
+```
+
+完整版中 lodash 赋于了其原型上的 chain
+
+## lodash.mixin
+
+方法可接收三个参数,参数一是目标对象或函数和参数三是可加选项对象,其中的`chain`标识是否可以链式(seq)调用,参数一和三是可选,参数二是必选,像极了 jQuery.extend 方法
+
+1. 只会混入方法不会混入属性
+2. 目标对象只要是一个对象或是一个函数就会为其混入一个静态方法
+3. 其原型会混入一个新的复制方法
+
+lodash 解释:
+
+  Adds all own enumerable string keyed function properties of a source object to the destination object. If `object` is a function, then methods are added to its prototype as well.
+
+将源对象的所有可枚举字符串键控函数属性添加到目标对象。如果“object”是一个函数，那么方法也会添加到它的原型中。以下是几个利用 mixin 的例子:
+
+### 默认混入到 lodash 中
+```js
+function _Lodash(){ }
+_Lodash._assignIn = '_assignIn'
+_Lodash._before = function _before(){}
+
+// 默认混合到 lodash 中
+lodash.mixin(_Lodash);
+console.log( _Lodash.prototype._assignIn ) //=> undefined
+console.log( _Lodash.prototype._before ) //=> undefined
+console.log(lodash._before) //=> [Function: _before]
+console.log(lodash._assignIn) //=> undefined
+console.log(lodash.prototype._before) //=> [Function]
+```
+
+属性并没有添加到 lodash 中,但是方法`_before`混入到了 lodash 原型和静态中,原型上失去原函数名
+
+### 混合到指定函数中
+```js
+// 混合到函数中
+lodash.mixin(_Lodash, _Lodash);
+console.log( _Lodash.prototype._assignIn ) //=> undefined
+console.log( _Lodash.prototype._before ) //=> [Function]
+console.log(_Lodash._before) //=> [Function: _before]
+```
+
+保留了原函数且混入到了`_Lodash`构造器与原型上
+
+### 混入到指定普通对象中
+```js
+// 混合到普通对象中
+var obj = {}
+lodash.mixin(obj, _Lodash);
+console.log( _Lodash.prototype._assignIn ) //=> undefined
+console.log( _Lodash.prototype._before ) //=> undefined
+console.log(lodash._before) //=> undefined
+console.log(obj._before) //=> [Function: _before]
+console.log(obj.prototype) //=> undefined
+```
+普通对象原型不存在,无法混入原型只能混入到静态中
+
+### 混入普通对象时携带其它对象
+```js
+// 尝试混入普通函数时携带其它对象
+lodash.mixin(_Lodash, _Lodash, { '_chain': true});
+console.log( _Lodash.prototype._assignIn ) //=> undefined
+console.log( _Lodash.prototype._before ) //=> [Function]
+console.log(lodash._before) //=> undefined
+console.log(_Lodash)
+/* [Function: _Lodash] {
+  _assignIn: '_assignIn',
+  _before: [Function: _before]
+} */
+console.log(_Lodash.prototype)
+// => _Lodash { _before: [Function] }
+```
+
+*源码中的 mixin() 前两个参数都指定是,是因为在 lodash 中 mixin 是独立调用的,如果此时是严格模式,则 this 是 undefined*
+
+有了这三点进入 mixin 就轻松很多了,以下是 mixin 源码部分:
+
+```js
+function mixin(object, source, options) {
+  var props = keys(source),
+      /* 过滤掉非函数的属性 */
+      methodNames = baseFunctions(source, props);
+  // 参数移位重构形参与实参
+  if (options == null &&
+      !(isObject(source) && (methodNames.length || !props.length))) {
+    options = source;
+    source = object;
+    object = this;
+    methodNames = baseFunctions(source, keys(source));
+  }
+
+  // ... 是否需要链式调用该方法
+  
+  // 依次为指定对象赋值方法
+  baseEach(methodNames, function(methodName) {
+    var func = source[methodName];
+    object[methodName] = func;
+    if (isFunc) {
+      object.prototype[methodName] = function() {
+        // ... 链式添加
+        return func.apply(object, arrayPush([this.value()], arguments));
+      };
+    }
+  });
+
+  return object;
+}
+```
+
+*lodash.mixin 只会混入方法不会混入属性*
+
 
 
 
