@@ -1,6 +1,45 @@
 
 # 计算机(内存,CPU,X64&X86)
 
+## 进程与线程
+
+1. 进程
+  操作系统中的`进程`是常驻程序和应用程序运行的标准单位,是唯一`已运行`实体,也就是进程表示其`正在运行`。
+
+  *面向线程设计系统中`线程容器`才是基本标准单位*
+
+2. 线程
+  `一个进程`中可以包含`若干个线程`,它们可以利用进程所拥有的资源,是操作系统能够进行运算调度的最小单位,也是进程中实际动作单位。由于线程比进程更小，基本上不拥有系统资源，故对它的调度所付出的开销就会小得多，能更高效的提高系统内多个程序间并发执行的程度。
+
+以上两点简单的解释出进程与线程之间关系,由于进程与线程关系,`单任务`或`多任务`就会出现在程序的设计上,意思就是一个程序可以在同一时间执行一个或多个任务,对应着进程与线程关系那就是:一个进程可以有一个线程或多个线程,那么进程与线程之前则可有这三大关系
+
+1. `单线程单进程(单任务进程)`一个进程和一个线程组成的程序叫单线程
+  + 优点
+    - 系统稳定
+    - 扩展性极强
+    - 软件丰富
+  + 缺点
+    - 由于需要在上一个任务完成后才能开始新的任务，所以其效率通常比多线程应用程序低
+
+2. `多线程单进程(多任务进程)`,在单个程序中同时运行多个线程完成不同的工作,称为多线程
+  + 优点
+    - 使用线程可以把占据时间长的程序中的任务放到后台去处理
+    - 用户界面可以更加吸引人，这样比如用户点击了一个按钮去触发某些事件的处理，可以弹出一个进度条来显示处理的进度
+    - 程序的运行速度可能加快
+    - 在一些等待的任务实现上如用户输入、文件读写和网络收发数据等，线程就比较有用了。在这种情况下可以释放一些珍贵的资源如内存占用等等。
+    - 多线程技术在IOS软件开发中也有举足轻重的位置。
+    - 线程应用的好处还有很多，就不一一说明了
+  + 缺点
+    - 如果有大量的线程,会影响性能,因为操作系统需要在它们之间切换。
+    - 更多的线程需要更多的内存空间。
+    - 线程可能会给程序带来更多“bug”，因此要小心使用。
+    - 线程的中止需要考虑其对程序运行的影响。
+    - 通常块模型数据是在多个线程间共享的，需要防止线程死锁情况的发生。
+
+3. `多线程多进程(多任务多进程)`
+
+*JavaScript 是一种典型的单任务进程*
+
 # 程序(程序=算法+数据结构,栈,堆,树,图...)
 
 # 网络(internet,http,tcp,udp,ssl,加密)
@@ -846,7 +885,7 @@ SEO (搜索引擎优化) 是一种让网站在搜索引擎结果中更加清晰,
 
 
 
-# 文档规范(XML,HTML,HTML5)
+## 文档规范
 
 + 使用正确的文档类型
 	- 文档类型声明位于HTML文档的第一行 `<!doctype html>`
@@ -1847,13 +1886,105 @@ target.addEventListener(String type, [Function | Object] listener[, useCapture, 
 
 ## 类型转换
 
-### 隐式转换 -- 布尔值
+基本类型（基本数值、基本数据类型）是一种既非对象也无方法的数据。在 JavaScript 中，共有7种基本类型：string，number，bigint，boolean，null，undefined，symbol (ECMAScript 2016新增)。
 
-JavaScript遇到预期为布尔值的地方（比如if语句的条件部分），就会将非布尔值的参数自动转换为布尔值。系统内部会自动调用Boolean函数
+除了 null 和 undefined之外，所有基本类型都有其对应的包装对象：String,Number,Bigint,Boolean,Symbol,而包装对象的`valueOf()`方法可以得到该对象的`基本类型`也就是`原始值`
 
-除以下几种值其余都为 `undefined``null``-0``0或+0``NaN``''`（空字符串）其它都会转换成 true,即时是空数组`[]`和空对象`{}`
+下面是几个对象的基本类型例子:
+```js
+// console.log( 5.valueOf() ) // SyntaxError: Invalid or unexpected token
+console.log( Number(5).valueOf() ) //=> 5
+console.log( String('kobe').valueOf() ) //=> kobe
+console.log( true.valueOf() ) //=> true
+console.log( Boolean(true).valueOf() ) //=> true
+console.log( Symbol('foo').valueOf() ) //=> Symbol(foo)
+```
 
-### 强制转换
+其中这里要解释一下,`true.valueOf()`也有原始值,这是因为 true 本身而言,是一个布尔值字面量,这与`[]`是一样的
+
+JavaScript 调用`valueOf`方法将对象转换为原始值。你很少需要自己调用 valueOf 方法；当遇到要预期的原始值的对象时，JavaScript 会自动调用它。
+
+[String 对象的 valueOf 方法返回一个String对象的原始值。该值等同于String.prototype.toString()](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/valueOf)
+
+其中每个对象的包装类型的构造器可以用来强制转换数据类型
+
+```js
+console.log( Number('123') ) //=> 123
+console.log( String('123') ) //=> "123"
+console.log( Boolean('kobe') ) //=> true
+console.log( Symbol('kobe') ) //=> Symbol(kobe)
+```
+
+如果当一个没有基本类型的值调用 valueOf 时，会返回对象本身
+
+*Math 和 Error 对象没有实现 valueOf() 方法*
+
+### 隐式转换
+
+JavaScript 遇到预期为一个类型时,比如预期布尔值的地方（比如if语句的条件部分），就会将非布尔值的参数自动转换为布尔值。系统内部会自动调用Boolean函数
+
+记住一个规则:运算返回什么类型,运算的操作数就会转换成什么类型
+
+比如算术运算符的二元运算`-`,因为`-`运算符结果是数值,也就会将操作数转换成数值,下面是一个表达式
+```js
+console.log( Number(true)) //=> 1
+console.log( Number(false)) //=> 0
+console.log( true - false ) //=> 1
+```
+*隐式转换时 toString 和 valueOf 方法是关键,不要随意重写,著名的 jQuery 原型污染就是攻击者重写 Object 原型上的 toString 方法导致类型转换的混乱*
+
+### `+`运算符
+
+`+`运算符在 JavaScript 中是个非常特别的运算符,可以当作一元运算符,也可以当作二元运算符,并且如果当作二元操作符时,操作数有一个是字符串,则会被视为字符串连接,而不会当作数值相加
+
+下面是个特别的例子:
+```js
+console.log( [] + 1 ) //=> 1
+console.log( typeof ([] + 1) ) //=> string
+console.log( 1 + [1] ) //=> 11
+console.log( typeof ([] + 1) ) //=> string
+```
+
+再用一个例子来分析转换过程:
+```js
+const originToTtring = Array.prototype.toString
+Array.prototype.toString = function(){
+  console.log('[] use tostring')
+  return originToTtring.call(this, arguments)
+}
+const originVluaeOf = Array.prototype.valueOf
+Array.prototype.valueOf = function(){
+  console.log('[] use valueOf')
+  return originVluaeOf.call(this, arguments)
+}
+
+console.log( [] + 1 )
+// [] use valueOf
+// [] use tostring
+//=> '1'
+```
+
+此处的`+`并不知道是用作字符串连接还是数值相加
+
+1. 数字`1`本身是`Number`的原始值,则不在需要转换
+2. `[]`空数组,先调用`valueOf`转换成原始值,结果还是一个空数组,是一个对象
+3. 当对象进行`+`运算,将对象转换成字符串,`[].toString()`结果为空字符串
+4. 由于这里`+`当作二元运算符操作,有一个操作数是字符串,那么结果为字符串
+
+JavaScript 中的表达式当`+`作为一元运算符时,结果就不会是两种情况就一种,返回数值,所以一元`+`运算符和数值包装类`Number`构造器一致
+```js
+console.log( +[1] )
+// [] use valueOf
+// [] use tostring
+//=> 1
+```
+1. `[]`首先调用`valueOf()`转换成原型类型
+2. 转换后的值依然是一个对象,则`toString()`,则为`"1"`
+3. 当`+`作为一元运算符返回数值,相当于`Number("1")`结果为 1
+
+*相反的其它可以当作一元运算符的都与此类似*
+
+[相关运算符见](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence)
 
 ## 三种对象
 
@@ -1871,7 +2002,7 @@ JavaScript 中一切皆对象，这是语言层面上的一切皆对象，而代
 
 ```js
 // 1. 函数声明
-function foo(){}
+function bar(){}
 // 2. 函数表达式
 let foo = function(){}
 // 3. 匿名函数，比如事件处理回调
@@ -1893,7 +2024,7 @@ var check = function( reg ){
 }
 var checkNumber = check(/^[0-9]+$/) // 利用 check 返回的函数作为另一个函数给 checkNumber 
 console.log( checkNumber(100) ) // true
-// 同时主里也用到了 curry 
+// 同时这里也用到了 curry 
 // 7. es6 之前表示一个作用域
 var scope = 'eee'
 (function(){
@@ -2310,15 +2441,15 @@ console.log(sutdent.money);
 
 # JavaScript 基础 异步解决方案
 
-javascript是一门单线程语言,即一次只能完成一个任务,若有多个任务要执行,则必须排队按照队列来执行(前一个任务完成,再执行下一个任务)。
+JavaScript 是一门单线程语言,即一次只能完成一个任务,若有多个任务要执行,则必须排队按照队列来执行(前一个任务完成,再执行下一个任务)。异步解决方案也是主要是为了解决了 JavaScript 单线程上I/O操作时带来的耗时,因JS加载而页面渲染的卡顿等问题。以下是在 JavaScript 中异步的几种处理方法:
 
 1. 回调队列(异步编程最基本方法)
-1. 事件监听
-2. Promise, CommandJS提出的一种规范，其目的是为异步编程提供统一接口
-3. gengerator
-4. async await
-5. nextTick setImmidate 
-6. async.js
+2. 事件监听
+3. Promise, CommandJS提出的一种规范，其目的是为异步编程提供统一接口
+4. gengerator
+5. async await
+6. nextTick setImmidate 
+7. [async.js](https://github.com/caolan/async)
 
 ## Promise/A+ 规范
 
@@ -2403,18 +2534,15 @@ executor 内部操作完成后可能成功也可能失败,但如果内部出现�
 
 *值得注意的是 ES6 的 promise 实现不是支持 IE 的*
 
-## async await
+## async/await 
 
-## async.js
 
 
 # JavaScript 基础(AMD,UMD,ES6,TypeScript(静态),Node.JS(包管理))
 
-## AMD,CMD,CommonJS
+AMD,CMD,CommonJS 这三个规范都是为 js 模块化加载而生的，都是在用到或者预计要用到某些模块时候加载该模块,使得大量的系统巨大的庞杂的代码得以很好的组织和管理,模块化使得我们在使用和管理代码的时候不那么混乱，而且也方便了多人的合作
 
-这三个规范都是为 js 模块化加载而生的，都是在用到或者预计要用到某些模块时候加载该模块,使得大量的系统巨大的庞杂的代码得以很好的组织和管理,模块化使得我们在使用和管理代码的时候不那么混乱，而且也方便了多人的合作
-
-### CommonJS
+## CommonJS
 
 一个有目标的构建 JavaScript 生态系统 Web 服务器组，在浏览器和命令行应用程序和桌面 `CommonJs` 是一个更偏向于服务器端的规范, `Node.js` 采用了这个规范,根据 CommonJS 规范，一个单独的文件就是一个模块加载模块使用`require`方法，该方法读取一个文件并执行，最后返回文件内部的`exports`对象同步加载模块
 
@@ -2444,7 +2572,7 @@ Module {
 >
 ```
 
-### AMD
+## AMD
 Asynchronous Module Definition 异步模块定义的意思, `define` 和 `require` 这两个定义模块、调用模块的方法，合称为 AMD 模式
 
 [异步加载依赖模块](https://github.com/amdjs/amdjs-api/wiki/AMD)
@@ -2471,11 +2599,6 @@ AMD 就只有二个接口，一个定义，一个加载,而定义 define(id, dep
 - id 模块名，省略则为文件名
 - dependencies 依赖数组，就是该模块需要的依赖
 - factory 工厂方法，为模块初始化要执行的函数或对象
-
-### CMD
-
-则是另一个奇特, 主要是因 seaJS 引起
-
 
 ## 源生规范
 
@@ -3310,36 +3433,49 @@ Commit Message 格式
 ```
 
 # 参考链接
-- https://segmentfault.com/q/1010000000640869
-- https://github.com/ljianshu/Blog/issues/51
-- https://www.runoob.com/html/html5-syntax.html
-- https://www.imooc.com/article/75237
-- https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta
-- https://www.runoob.com/w3cnote/viewport-deep-understanding.html
-- https://blog.csdn.net/lianfengzhidie/article/details/86663715
-- https://www.cnblogs.com/zaoa/p/8630393.html
-- https://www.cnblogs.com/yesyes/p/7638607.html
-- https://www.imooc.com/article/75237
-- https://www.cnblogs.com/zaoa/p/8630393.html
-- https://blog.csdn.net/lianfengzhidie/article/details/86663715
-- https://www.cnblogs.com/2050/p/3877280.html
-- https://www.cnblogs.com/zdz8207/p/vue-pt-px-750.html
-- https://github.com/mqyqingfeng/Blog
-- http://www.ecma-international.org/ecma-262/6.0/index.html
-- https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/
-- http://es5.github.io/
-- https://www.runoob.com/w3cnote/html-css-guide.html#css
-- https://www.w3cschool.cn/css/css-selector.html
-- https://blog.csdn.net/m0_37972557/article/details/80370822
-- https://segmentfault.com/a/1190000018717319
-- https://www.w3.org/TR/css-cascade-4/#cascading
+- [defer 和 async](https://segmentfault.com/q/1010000000640869)
+- [深入浅出浏览器渲染原理](https://github.com/ljianshu/Blog/issues/51)
+- [HTML5代码规范](https://www.runoob.com/html/html5-syntax.html)
+- [CSS像素](https://www.imooc.com/article/75237)
+- [MDN meta 标签](https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta)
+- [viewport 深入理解](https://www.runoob.com/w3cnote/viewport-deep-understanding.html)
+- [像素（px）到底绝对单位还是相对单位](https://blog.csdn.net/lianfengzhidie/article/details/86663715)
+- [像素,物理像素,逻辑像素](https://www.cnblogs.com/zaoa/p/8630393.html)
+- [分辨率](https://www.cnblogs.com/yesyes/p/7638607.html)
+- [CSS像素](https://www.imooc.com/article/75237)
+- [移动前端开发之viewport的深入理解](https://www.cnblogs.com/2050/p/3877280.html)
+- [pt和px](https://www.cnblogs.com/zdz8207/p/vue-pt-px-750.html)
+- [ES2015 规范](http://www.ecma-international.org/ecma-262/6.0/index.html)
+- [javascript 函数式编程](https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/)
+- [ES5 规范](http://es5.github.io/)
+- [菜鸟教程 CSS 规范](https://www.runoob.com/w3cnote/html-css-guide.html#css)
+- [W3C-CSS选择器汇总](https://www.w3cschool.cn/css/css-selector.html)
+- [CSDN-Web性能优化之CSS性能优化篇](https://blog.csdn.net/m0_37972557/article/details/80370822)
+- [浏览器解析 CSS 样式的过程](https://segmentfault.com/a/1190000018717319)
+- [W3C 层叠样式表规范](https://www.w3.org/TR/css-cascade-4/#cascading)
 - https://blog.csdn.net/lch1251680944/article/details/87975532
-- https://www.w3.org/TR/CSS2/visuren.html#normal-flow
-- https://yq.aliyun.com/articles/617734?utm_content=m_1000007927
-- http://www.ecma-international.org/ecma-262/6.0/index.html
-- https://promisesaplus.com/
-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
-- http://kangax.github.io/compat-table/es6/
-- https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects
-- https://github.com/axios/axios/tree/master/lib/adapters
-- https://nodejs.org/dist/latest-v8.x/docs/api/http.html
+- [W3C 文档流规范](https://www.w3.org/TR/CSS2/visuren.html#normal-flow)
+- [浅谈几个前端异步解决方案](https://yq.aliyun.com/articles/617734?utm_content=m_1000007927)
+- [Promises/A+ 规范](https://promisesaplus.com/)
+- [MDN Promise API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+- [浏览器 Promise 兼容表](http://kangax.github.io/compat-table/es6/)
+- [ES2015 Promise 规范](https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects)
+- [axios adapters](https://github.com/axios/axios/tree/master/lib/adapters)
+- [nodejs http 模块 API](https://nodejs.org/dist/latest-v8.x/docs/api/http.html)
+
+- [JavaScript深入之词法作用域和动态作用域](https://github.com/mqyqingfeng/Blog/issues/3)
+- [undefined 和 null](http://www.ruanyifeng.com/blog/2014/03/undefined-vs-null.html)
+- [EventTarget.addEventListener()](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)
+- [JavaScript 运算符](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence)
+- [ES5 类型转换规范](http://es5.github.io/#x9.1)
+- [Object.prototype.valueOf](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/valueOf)
+- [JavaScript深入之从ECMAScript规范解读this](https://github.com/mqyqingfeng/Blog/issues/7)
+- [菜鸟教程 JavaScript 闭包](https://www.runoob.com/js/js-function-closures.html)
+- [JavaScript 六种继承方式](https://segmentfault.com/a/1190000016708006)
+- [进程与线程](https://www.liaoxuefeng.com/wiki/897692888725344/923056118147584)
+- [MDN async](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+- [JavaScript 调用栈,回调队列,事件循环](https://cek.io/blog/2015/12/03/event-loop/)
+- [C++ 视角阐述为什么需要异步](https://www.cnblogs.com/goya/p/11962828.html)
+- [MDN XMLHttpRequest API](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest)
+- [MDN Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+- [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
