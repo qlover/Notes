@@ -11,7 +11,7 @@
 - Function.prototype.length
 - Function.length
 
-## lodash.isArguments 
+## Lodash.isArguments 
 
 判断是否是一个 arguments 对象, arguments 也就是函数参数对象, 是数组的一种`鸭子类型`, 该对象有两个特点, 一就是 `typeof` 操作符会返回 `object` 并且有 `callee` 属性，lodash 中作了以下几个处理
 1. isObjectLike 像是一个对象
@@ -26,7 +26,7 @@ function _isArguments(value) {
 }
 ```
 
-## lodash.isFunction 
+## Lodash.isFunction 
 
 判断是否是一个函数,其中 lodash 对 `AsyncFunction`,`Function`,`GeneratorFunction` 三种函数都作了判断
 
@@ -34,13 +34,13 @@ function _isArguments(value) {
 function* gen1(){}
 async function getData(){}
 function bar () {}
-// 套用 jquery 的方式获取原生对象的 toString 引用
+
 console.log(({}).toString.call(gen1) ) // [object GeneratorFunction]
 console.log(({}).toString.call(getData) ) // [object AsyncFunction]
 console.log(({}).toString.call(bar) ) // [object Function]
 ```
 
-## lodash.isObject
+## Lodash.isObject
 
 lodash 将非 null 值,普通对象和函数都当作对象，而`isObjectLike`只是除开了函数
 
@@ -54,7 +54,7 @@ console.log(typeof ({})) // object
 console.log(_isObject(null) ) // false
 console.log(_isObject({}) ) // true
 ```
-## lodash.isNumber 
+## Lodash.isNumber 
 
 lodash 有点类似恒等于于数字,但 lodash 并没有直接用恒等于,而是和 isFunction 一样,用了 toString 将字符数值和普通数字区分开来
 
@@ -65,7 +65,7 @@ function _isNumber(value) {
 }
 ```
 
-## lodash.isNaN
+## Lodash.isNaN
 
 lodash 这个方法可以说是一个比较有趣的方法, lodash 检测一个值是否是一个*非数字*是基于 `Number.isNaN` 并非全局下的 isNaN
 
@@ -149,7 +149,7 @@ console.log(typeOfNaN(NaN)) //=>"Number NaN"
 Number.isNaN 则是将需要判断数值 value 是 NaN 那么返回 true，否则返回 false，这样就可以避免掉使用全局的在理解上的混淆, lodash 我想也是因为这样的吧
 
 
-## lodash.isEmpty
+## Lodash.isEmpty
 
 lodash 将下面几种视为空:
 1. 一个没有可以枚举属性的对象
@@ -158,12 +158,12 @@ lodash 将下面几种视为空:
 4. 函数始终为空
 
 ```js
-console.log( lodash.isEmpty(null) ) // => true
-console.log( lodash.isEmpty(true) ) // => true
-console.log( lodash.isEmpty('1') ) // => false
-console.log( lodash.isEmpty(1) ) // => true
-console.log( lodash.isEmpty([1, 2, 3]) ) // => false
-console.log( lodash.isEmpty({ 'a': 1 }) ) // => false
+console.log( Lodash.isEmpty(null) ) // => true
+console.log( Lodash.isEmpty(true) ) // => true
+console.log( Lodash.isEmpty('1') ) // => false
+console.log( Lodash.isEmpty(1) ) // => true
+console.log( Lodash.isEmpty([1, 2, 3]) ) // => false
+console.log( Lodash.isEmpty({ 'a': 1 }) ) // => false
 ```
 
 需要注意的是，三个 length
@@ -178,40 +178,41 @@ console.log( function(a,b){}.length ) //=> 2
 console.log( (function(a,b){ return arguments.length}(1)) ) //=> 1
 console.log( ((a,b,c)=>{}).length ) //=> 3
 ```
-lodash.isEmpty 会将一个函数当作空，不管该函数有多少个形参或实参，这里说起函数下面看一个 `isNative` 的方法
+Lodash.isEmpty 会将一个函数当作空，不管该函数有多少个形参或实参，这里说起函数下面看一个 `isNative` 的方法
 
-### lodash.isNative 判断一个参数是否为原生函数
+### Lodash.isNative 判断一个参数是否为原生函数
 
 原生函数就像是数组的 join,split,push 等这类函数,也就是由 JavaScript 实现的函数,但是该方法不包括在 lodash 核心中
 
 ```js
-console.log( lodash.isNative( lodash.isEmpty ) ) //=> false
-console.log( lodash.isNative( [1,2,3].push ) ) //=> true
+console.log( Lodash.isNative( Lodash.isEmpty ) ) //=> false
+console.log( Lodash.isNative( [1,2,3].push ) ) //=> true
 ```
 
-## lodash.eq
+## Lodash.eq
 
 先看看 ECMAScript 规定的几个内部比较规范，可能会更好理解 eq 方法，以 x,y 两个未知数做比较有以下几可能:
 
-+ 恒等于*与 SameVlue 对比多处理了有符号数和 NaN 情况* [Strict Equality Comparison](http://ecma-international.org/ecma-262/6.0/#sec-strict-equality-comparison)
-  1. x y 两个数类型不同则为 false
-  2. x 为 undefined 或 null 直接返回 true
-  3. 当 x 为 Number
-  	- x 或 y 其中一个是 NaN 返回 false
-  	- 如果相等返回 true
-  	- `-0`与`+0`, `+0`与`-0` true
-  	- 其他情况一律返回 false
-  4. 当 x 为 String
-  	- x 与 y 索引上的每一位都相等，则返回 true
-  	- 其它一律 false
-  5. 当 x 为 Boolean
-  	- x 与 y 除非都为 true 或 false, 返回 true
-  	- 其它一律 false
-  6. 当 x 为 Symbol, 只有自己和自己相等
-  7. 当 x 为 Object, 只有自己和自己相等
-  8. 其它情况一律 false
++ 恒等于与 SameVlue 对比多处理了有符号数和 NaN 情况 [Strict Equality Comparison](http://ecma-international.org/ecma-262/6.0/#sec-strict-equality-comparison)
+	- x y 两个数类型不同则为 false
+  - x 为 undefined 或 null 直接返回 true
+  - 当 x 为 Number
+  1. x 或 y 其中一个是 NaN 返回 false
+  2. 如果相等返回 true
+  3. `-0`与`+0`, `+0`与`-0` true
+  4. 其他情况一律返回 false
+  - 当 x 为 String
+  1. x 与 y 索引上的每一位都相等，则返回 true
+  2. 其它一律 false
+  - 当 x 为 Boolean
+  1. x 与 y 除非都为 true 或 false, 返回 true
+  2. 其它一律 false
+  - 当 x 为 Symbol, 只有自己和自己相等
+  - 当 x 为 Object, 只有自己和自己相等
+  - 其它情况一律 false
 
-+ SameValue [SameValue](http://ecma-international.org/ecma-262/6.0/#sec-samevalue)
+
++ [SameValue](http://ecma-international.org/ecma-262/6.0/#sec-samevalue)
 	1. 如果类型不同返回 false
 	2. x 为 undefined 或 null 返回 true
 	3. 当 x 为 Number
@@ -223,7 +224,8 @@ console.log( lodash.isNative( [1,2,3].push ) ) //=> true
 	5. 当 x 为 Boolean,x 与 y 除非都为 true 或 false, 返回 true
 	6. 当 x 为 Symbol, 只有自己和自己相等
 	7. 当 x 为 Object, 只有自己和自己相等
-+ SameValueZero [SameValueZero](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
+
++ [SameValueZero](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
 	1. 如果类型不同返回 false
 	2. x 为 undefined 或 null 返回 true
 		- x 与 y 都为 NaN 为相等
@@ -257,23 +259,23 @@ function _eq(value, other) {
 
 值克隆(如果要深度复制可见完整版本),该方法除了错误对象、函数、DOM 节点和 WeakMaps 基本全都可以完成复制
 
-当然如果说只是要一个复制值那很简单,也就是两个变量交换而已,如果是一个引用类型需要复制，比如说要复制一个数组，我们通常想到的办法则是将数组遍历一次依次返回出一个新的数组，或者是直接借用原生 Array.ptotoype.map, Array.ptotoype.slice 或其它外排方法，直接返回出一个新的数组,话虽是这样说，但是 JavaScript 世界中却没有想的那样简单，下面来看看 `lodash.clone()` 
+当然如果说只是要一个复制值那很简单,也就是两个变量交换而已,如果是一个引用类型需要复制，比如说要复制一个数组，我们通常想到的办法则是将数组遍历一次依次返回出一个新的数组，或者是直接借用原生 Array.ptotoype.map, Array.ptotoype.slice 或其它外排方法，直接返回出一个新的数组,话虽是这样说，但是 JavaScript 世界中却没有想的那样简单，下面来看看 `Lodash.clone()` 
 
 ```js
 let a = [1,2,3]
-let b = lodash.clone(a)
+let b = Lodash.clone(a)
 console.log(a)//=> [ 1, 2, 3 ]
 console.log(b)//=> [ 1, 2, 3 ]
 console.log(a === b)//=> false
 let c = { 'ns' : a, 'name': 'qlover'}
-let d = lodash.clone(c)
+let d = Lodash.clone(c)
 console.log(c)//=> { ns: [ 1, 2, 3 ], name: 'qlover' }
 console.log(d) //=> { ns: [ 1, 2, 3 ], name: 'qlover' }
 console.log(c === d) //=> false
 console.log(c.ns === d.ns) //=> true
 ```
 
-可以明显的看出来 clone 做到了值的复制但并没有深度克隆,说起深度克隆我就想起了`jQuery.extend()`,这个方法是真的设计巧妙, jQuery.extend 这个方法没一个形参，却可以接受若干个实参，其中可以像普通值复制一样参数一 target 参数二 source ,又或者是参数一传入布尔值作为深浅复制标识,内部值复制遍历赋值深度克隆则递归,用 arguments 这个特殊对象,在内部将实参整理成固定形参方式，这样不管传入什么参数，其内部的参数组合递归复制是完成深浅复制的特点,而 lodash 的做法与 jQuery.extend 相似，两者都有自己特色。下面是 lodash.clone() 的源方法
+可以明显的看出来 clone 做到了值的复制但并没有深度克隆,说起深度克隆我就想起了`jQuery.extend()`,这个方法是真的设计巧妙, jQuery.extend 这个方法没一个形参，却可以接受若干个实参，其中可以像普通值复制一样参数一 target 参数二 source ,又或者是参数一传入布尔值作为深浅复制标识,内部值复制遍历赋值深度克隆则递归,用 arguments 这个特殊对象,在内部将实参整理成固定形参方式，这样不管传入什么参数，其内部的参数组合递归复制是完成深浅复制的特点,而 lodash 的做法与 jQuery.extend 相似，两者都有自己特色。下面是 Lodash.clone() 的源方法
 
 ```js
 function clone(value) {
@@ -351,7 +353,7 @@ var baseEachRight = _createBaseEach(_baseForOwn, true);
 
 ### 基函数 `#`createBaseFor
 
-lodash.forIn 和 lodash.forOwn 的基函数,什么是基函数,可以理解为 lodash.forOwn 函数是由该函数生成,或者是 lodash.forIn 函数的母亲是该函数
+Lodash.forIn 和 Lodash.forOwn 的基函数,什么是基函数,可以理解为 Lodash.forOwn 函数是由该函数生成,或者是 Lodash.forIn 函数的母亲是该函数
 
 这里的两个生成函数并不是核心里面的,但核心中有一个叫 `baseFor` 的重要函数, `baseForOwn` 函数也是由 baseFor 该生成专门用来可遍历`类数组`的函数
 
@@ -386,7 +388,7 @@ function _createBaseEach(eachFunc, fromRight) {
       return collection;
     }
     // 类数组处理
-    if ( !lodash.isArrayLike(collection)) {
+    if ( !Lodash.isArrayLike(collection)) {
       return eachFunc(collection, iteratee);
     }
     // 通常集合处理
@@ -413,12 +415,12 @@ jQuery 的链式操作应该是10多年前的一个新潮思想, jQuery 的链�
 
 *createBaseFor,createBaseEach 都属于基函数,且这里面每一个函数都 pure*
 
-## lodash.flatten
+## Lodash.flatten
 
 将数组扁平化一次，这里的扁平化一次代表的是将深度扁平一次
 
 ```js
-console.log(lodash.flatten([1,2,[3,[4]],5,[6]])) //=>[ 1, 2, 3, [ 4 ], 5, 6 ]
+console.log(Lodash.flatten([1,2,[3,[4]],5,[6]])) //=>[ 1, 2, 3, [ 4 ], 5, 6 ]
 ```
 
 ### `#`baseFlatten 私有方法
@@ -451,7 +453,7 @@ console.log( _baseFlatten([1,2,[3,4],5]) ) //=> [ 1, 2, 3, 4 , 5 ]
 console.log( _baseFlatten([1,2,[3,4],5], Array.isArray, [100]) ) //=> [ 100, 1, 2, 3, 4, 5 ]
 ```
 
-这是一个简单版的 baseFlatten, 可接收四个参数可以实现一个简单的扁平化,也可以，在当前方法中添加一个深度标识或再添加上一个 lodash.`#`baseFlatten 方法的一个 isStrict 标识,再对上述方法改造
+这是一个简单版的 baseFlatten, 可接收四个参数可以实现一个简单的扁平化,也可以，在当前方法中添加一个深度标识或再添加上一个 Lodash.`#`baseFlatten 方法的一个 isStrict 标识,再对上述方法改造
 
 ```js
 function _baseFlatten(array, depth, checkCallback, result) {
@@ -487,7 +489,7 @@ console.log( _baseFlatten([1,2,[3,4],5], 1, null, [200]) ) //=> [ 200, 1, 2, 3, 
 
 ```js
 function _isFlattenable(value) {
-  return lodash.isArray(value) || lodash.isArguments(value);
+  return Lodash.isArray(value) || Lodash.isArguments(value);
 }
 function _baseFlatten(array, depth, predicate, isStrict, result) {
   var index = -1,
@@ -528,36 +530,36 @@ console.log( _baseFlatten([1,2,[3,[4,5],6],7,8,[9]], 0, _isFlattenable ) )
 
 从源码中两个或运算看整理参数也是与通常不同,或运算也算是一个表达式,与通常的 `result = result || []` 这样写法不同，但实际结果相同，这是因为或运算有个特点,也就是如果表达式为真则直接返回左操作数，如果为假则会返回右操作数,这里右操作数是一个赋值操作，而赋值运算也会返回一个结果,如果在 apply 和最后中括号赋值直接在内部操作，可能该方法会变纯
 
-### lodash.flattenDeep
+### Lodash.flattenDeep
 
 由 `_baseFlaten`可知道影响扁平深度的是一个 depth 计数变量，而 flattenDeep 则是`_baseFlatten`暴露出来深度扁平的方法,而其中的 depth 则是一个 `INFINITY`,但需要请注意的是 INFINITY 是不能直接被字面量表示的,在 loadsh 中用 `1/0` 表达示得到了 INFINITY,flattenDeep 会一直扁平化数组到元素中没有数组为止
 
 ```js
-console.log( lodash.flattenDeep([1,2,3,4,[5,6,7,8,[9,10,11,12,13,[14,15,16,17]]]]))
+console.log( Lodash.flattenDeep([1,2,3,4,[5,6,7,8,[9,10,11,12,13,[14,15,16,17]]]]))
 //=> [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ]
 ```
 
-## lodash.forEach
+## Lodash.forEach
 
 
 对于 ES5 提供的一些方法，比如 Array.prototype.filter,Array.prototype.map,Array.prototype.reduce lodash 都已经有实现,如果浏览器不支持 ES5, lodash 则是比较好的选择
 
 ```js
-console.log( lodash.filter ) //=> [Function: filter]
-console.log( lodash.forEach ) //=> [Function: forEach]
-console.log( lodash.every ) //=> [Function: every]
-console.log( lodash.map ) //=> [Function: map]
-console.log( lodash.reduce ) //=> [Function: reduce]
+console.log( Lodash.filter ) //=> [Function: filter]
+console.log( Lodash.forEach ) //=> [Function: forEach]
+console.log( Lodash.every ) //=> [Function: every]
+console.log( Lodash.map ) //=> [Function: map]
+console.log( Lodash.reduce ) //=> [Function: reduce]
 ```
 
-lodash.forEach 方法是由 `#baseEach()` 私有方法生成的
+Lodash.forEach 方法是由 `#baseEach()` 私有方法生成的
 
 回忆一下 `#baseEach()`，由 `#createBaseEach(baseForOwn)` 和参数 `baseForOwn` 两个函数生成，而 baseForOwn 又是由 `createBaseFor(false)`生成,此处最后则生成了 forEach,一个最终的实现接口
 
 
 ```js
 let foo = [1,2,3,4,5,6]
-let bar = lodash.forEach(foo, function(i,v){})
+let bar = Lodash.forEach(foo, function(i,v){})
 console.log(foo)//=> [ 1, 2, 3, 4, 5, 6 ]
 console.log(bar)//=> [ 1, 2, 3, 4, 5, 6 ]
 ```
@@ -566,7 +568,7 @@ console.log(bar)//=> [ 1, 2, 3, 4, 5, 6 ]
 
 ### `#`baseIteratee
 
-lodash 解释该私有方法是主要是实现 `lodash.iteratee`, forEach 也是由它生成的,以下是它的伪源码:
+lodash 解释该私有方法是主要是实现 `Lodash.iteratee`, forEach 也是由它生成的,以下是它的伪源码:
 
 ```js
 // 可遍历的本体函数
@@ -610,11 +612,11 @@ function forEach(collection, iteratee) {
 }
 ```
 
-也就说, baseIteratee 在这里是为了为 baseEach 参数二回调进行一个处理,这也是为什么在 lodash.iteratee 参数二可以是一个函数,一个对象,一个数组等
+也就说, baseIteratee 在这里是为了为 baseEach 参数二回调进行一个处理,这也是为什么在 Lodash.iteratee 参数二可以是一个函数,一个对象,一个数组等
 
 #### `#`baseMatches 与 `#`baseProperty
 
-该回调作用很明确,第一步遍历可枚举的属性与目标对象的每个属性和值是否相等,也是`lodash.metches`的基函数
+该回调作用很明确,第一步遍历可枚举的属性与目标对象的每个属性和值是否相等,也是`Lodash.metches`的基函数
 
 而取得对象的所有属性名用的是可枚举对象属性名的 Object.keys,得到目标对象的一个可枚举属性数组,在通常的 Object.keys 之上,在 ES5 里，Object.keys 参数不是对象（而是一个原始值）,那么它会抛出 TypeError。 在 ES2015 中,非对象的参数将被强制转换为一个对象。
 
@@ -809,7 +811,7 @@ baseMatches, baseProperty 三个回调构成
 baseProperty, baseMatches 可以深度比较，当然这里最重要的不是什么底层实现，也不是 equalArrays，equalByTag，equalObjects 其中的谁谁生成了谁,而是位掩码这种思想,关于 baseIsEqual 或是 baseIsEqualDeep 之后会详细分析源码
 
 
-## lodash.tap 
+## Lodash.tap 
 
 tap 属于一个链式调用方法,这里也是一个可以操作数组的方法, lodash 解释就调用一个拦截器并返回原值,作用就是为链式操作做准备,就像是一个请求拦截器,在请求完发送之前处理的方法,这个方法也是如果,但该方法可以这样说,是目前为止核心中最简单的一个方法,源码就是为一个值参数一个回调，然后返回作为参数的原值,代码层面上简单,但思想独特
 
@@ -827,9 +829,9 @@ console.log( bar === foo)
 console.log(foo.pop()) //=> 2
 ```
 
-## lodash.thru
+## Lodash.thru
 
-与 lodash.tap 类似,其返回的并不是原值,而是被拦截器的返回值,如果一个原值是数组,被 thru, 拦截器返回一个对象,则 thru 最后就会返回对象
+与 Lodash.tap 类似,其返回的并不是原值,而是被拦截器的返回值,如果一个原值是数组,被 thru, 拦截器返回一个对象,则 thru 最后就会返回对象
 
 ```js
 let bar = [1,2,3]
@@ -844,7 +846,7 @@ console.log( foo ) //=>{ bar: [ 1, 2, 3 ] }
 
 *类似这样的方法还有很多,其实主要就是对函数或数据类型做一个包装,支持函数式的操作*
 
-## lodash.max && lodash.min
+## Lodash.max && Lodash.min
 
 max 寻找数组中最大的值,min 寻找数组中最小的值,想象有一串数字,不借用 max 方法找到最大的值,通常方法,遍历一次这串数字,取其中一个数字与所有数字进行比较,如果出现比该数字还大的数字则赋值成较大的数字,依次遍历到最后一个数字,从语言层面上来说就是循环或是递归,当然通常办法也只有这样。
 
@@ -898,7 +900,7 @@ function f(x){ return x + 1 }(1)//不报错，为什么返回 1
 
 ### `#`baseExtremum
 
-极值函数基函数,主要实现 lodash.max 和 lodash.min,如果说有了 baseGt 和 baseLt 让我来实现 baseExtremum 我会像下面这样去实现它
+极值函数基函数,主要实现 Lodash.max 和 Lodash.min,如果说有了 baseGt 和 baseLt 让我来实现 baseExtremum 我会像下面这样去实现它
 
 ```js
 function _baseLt(value, other) {
@@ -995,14 +997,14 @@ console.log( _min([1,2,4,5,8,7,3]))//=> 1
 
 
 
-## lodash.prototype 原型数组方法
+## Lodash.prototype 原型数组方法
 
 ```js
-console.log( lodash.join([1,2,3,4], ',') ) //=> 1,2,3,4
+console.log( Lodash.join([1,2,3,4], ',') ) //=> 1,2,3,4
 console.log( [1,2,3,4].join(',') )//=> 1,2,3,4
 
 console.log( '1,2,3,4'.split(',') )//=> [ '1', '2', '3', '4' ]
-console.log( lodash.split('1,2,3,4', ',') )//=> [ '1', '2', '3', '4' ]
+console.log( Lodash.split('1,2,3,4', ',') )//=> [ '1', '2', '3', '4' ]
 ```
 
 第一个 lodash 成员都会有自己的属性,方法,这样的设计与大多数都一样,只是在 lodash 中,个人认为,大多地方不在是以数据为单位,就像 jQuery 以每个 dom 元素作为单位, lodash 以一个函数作为一个单位,主要围绕着函数
@@ -1111,17 +1113,17 @@ console.log( isFunction(function* (){}))//=> true
 console.log( isFunction(function (){}))//=> true
 ```
 
-代码很长,但思维缜密,每个部分,每一个方法,属性可以说都是独立于整个类库中,如果说 isArray ES5 已经提供,那么 isFunction 就是只属于它自己的,baseGetTag 也是 lodash.getTag 的基函数
+代码很长,但思维缜密,每个部分,每一个方法,属性可以说都是独立于整个类库中,如果说 isArray ES5 已经提供,那么 isFunction 就是只属于它自己的,baseGetTag 也是 Lodash.getTag 的基函数
 
 
 ## `#`baseValues
 
-`lodash.values`是由该方法生成的,lodash.values 方法返回一个指定对象`可枚举`属性值的数组
+`Lodash.values`是由该方法生成的,Lodash.values 方法返回一个指定对象`可枚举`属性值的数组
 
 ```js
-console.log( lodash.values([1,2,3,4,5,6]) ) //=> [ 1, 2, 3, 4, 5, 6 ]
-console.log( lodash.values('hi') ) //=> [ 1, 2, 3, 4, 5, 6 ]
-console.log( lodash.values(100) ) //=> []
+console.log( Lodash.values([1,2,3,4,5,6]) ) //=> [ 1, 2, 3, 4, 5, 6 ]
+console.log( Lodash.values('hi') ) //=> [ 1, 2, 3, 4, 5, 6 ]
+console.log( Lodash.values(100) ) //=> []
 ```
 
 baseValues 的具体步骤,操作一得到指定对象的可枚举的属性,Object.keys 可直接获取,操作二 baseEach 遍历出可枚举属性的属性值,只是这个过程中加入了一个`baseMap`操作, baseMap 是实现 map 的基函数,但内部还是用 createBaseEach 完成,回调分别是键,值和当前遍历的对象
@@ -1161,11 +1163,11 @@ while (++index < length) {
 源码的 createAssigner 方法中最值得注意的地方有两处
 
 1. assigner 回调可以接收四个参数,依次为 target 对象,当前复制的源对象 source, 遍历的索引 index, customizer
-2. assigner 第四上参数 customizer, 该参数可以是一个函数, `lodash.assignWith`中有解释,意思就是如果是以 assignWith 这样的方式进行属性复制则可以自定义复制值的最终结果,如果为函数时可以接收五个参数`objValue, srcValue, key, object, source`,可以看作是 createAAssigner 提供的一个钩子函数
+2. assigner 第四上参数 customizer, 该参数可以是一个函数, `Lodash.assignWith`中有解释,意思就是如果是以 assignWith 这样的方式进行属性复制则可以自定义复制值的最终结果,如果为函数时可以接收五个参数`objValue, srcValue, key, object, source`,可以看作是 createAAssigner 提供的一个钩子函数
 
 ### `#`copyObject 私有方法
 
-上述的 createAssigner 回调 assigner, 在 lodash.assign() 或 lodash.assignIn() 方法指定的是 copyObject() 为 assigner, copyObject 的参数二也是直接用 Object.keys 或 for...in 遍历出来的所有属性名数组
+上述的 createAssigner 回调 assigner, 在 Lodash.assign() 或 Lodash.assignIn() 方法指定的是 copyObject() 为 assigner, copyObject 的参数二也是直接用 Object.keys 或 for...in 遍历出来的所有属性名数组
 
 ```js
 /**
@@ -1256,7 +1258,7 @@ function baseRest(func, start) {
 核心版本中`#setToString()`方法其实就是`#identity()`方法,这是因为在完整版本中 setToString 可重写对象的 toString 方法
 
 
-## lodash.assign
+## Lodash.assign
 
 该方法松散的基于`Object.assign()`,作用很简单就是对象的复制,将所有可枚举属性的值从一个或多个源对象复制到目标对象,返回目标对象
 
@@ -1301,16 +1303,16 @@ console.log( Object.keys(JSON.parse('{ "b": 2, "__proto__": { "a" : 10}}')) )
 console.log( Object.keys(o))
 //=> [ 'b' ]
 ```
-也就是说如果解析的属性名其原型或本身都会存在时,会丢失属性的修饰,从这里也就不难看出,不管是用 Object.assign 或是用基于 Object.assign 的 lodash.assign 都会存在这样的一个问题
+也就是说如果解析的属性名其原型或本身都会存在时,会丢失属性的修饰,从这里也就不难看出,不管是用 Object.assign 或是用基于 Object.assign 的 Lodash.assign 都会存在这样的一个问题
 
-lodash 的解决方案就是利用`Object.prototype.hasOwnProperty()`和`in`运算符,`hasOwnProperty`和`in`都检测一个对象是否含有特定属性,但只有`in`不会忽略原型链上的属性,回到上述的`_baseAssignValue`和`_assignValue`,lodash核心版本中 lodash.assign 是私有方法并没有暴露出来,是因为核心版本中的处理并非到达`_assignValue`方法内部,而完整版中`_assignValue`方法排除了这个可能,这是就是因为 assign 在核心版本中除了 null undefined 这些参数其它都会直接 baseAssignValue 直接赋值
+lodash 的解决方案就是利用`Object.prototype.hasOwnProperty()`和`in`运算符,`hasOwnProperty`和`in`都检测一个对象是否含有特定属性,但只有`in`不会忽略原型链上的属性,回到上述的`_baseAssignValue`和`_assignValue`,lodash核心版本中 Lodash.assign 是私有方法并没有暴露出来,是因为核心版本中的处理并非到达`_assignValue`方法内部,而完整版中`_assignValue`方法排除了这个可能,这是就是因为 assign 在核心版本中除了 null undefined 这些参数其它都会直接 baseAssignValue 直接赋值
 
 
 # Function
 
 ## `#`baseRest
 
-当一个函数可以接收若干个参数,ES5 这之前都提供了一个叫 arguments 的类数组对象,不管是什么实参,一旦传入都会被 arguments 接收到,但 arguments 很特殊不能像通常数组一样使用,ES6 这之后加了一个新特性叫 rest 参数,可以做到像 python `*args` 这样的形参形式,可以接收若干实参的数组,而`lodash.rest`可以理解为 arguments 到 rest 参数的过渡
+当一个函数可以接收若干个参数,ES5 这之前都提供了一个叫 arguments 的类数组对象,不管是什么实参,一旦传入都会被 arguments 接收到,但 arguments 很特殊不能像通常数组一样使用,ES6 这之后加了一个新特性叫 rest 参数,可以做到像 python `*args` 这样的形参形式,可以接收若干实参的数组,而`Lodash.rest`可以理解为 arguments 到 rest 参数的过渡
 
 为了实现像 ES6 这样的 rest 参数 lodash 是这样做的。
 
@@ -1386,7 +1388,7 @@ function _baseMap(collection, iteratee) {
 }
 ```
 
-## lodash.sortBy
+## Lodash.sortBy
 
 `Array.prototype.sort([compareFunction(firstEl, secondEl)])` 方法用原地算法对数组的元素进行排序，并返回数组。默认排序顺序是在将元素转换为字符串，然后比较它们的UTF-16代码单元值序列时构建的,`如果compareFunction`省略,元素按照转换为的字符串的各个字符的Unicode位点进行排序
 
@@ -1480,7 +1482,7 @@ c.__proto__.name = 'BB'
 console.log(A.prototype.name) //=> BB
 ```
 
-lodash.`#baseCreate()` 私有方法也是实现了 Object.create 方法的作用,其源码如下:
+Lodash.`#baseCreate()` 私有方法也是实现了 Object.create 方法的作用,其源码如下:
 
 ```js
 var baseCreate = (function() {
@@ -1539,14 +1541,14 @@ function LodashWrapper(value, chainAll) {
   this.__actions__ = [];
   this.__chain__ = !!chainAll;
 }
-LodashWrapper.prototype = baseCreate(lodash.prototype);
+LodashWrapper.prototype = baseCreate(Lodash.prototype);
 LodashWrapper.prototype.constructor = LodashWrapper;
 ```
-LodashWrapper 可接收两个参数,`value`为实例的`__wrapped__`提供属性值, lodash 构造器接收的参数也会由 LodashWrapper 包裹,就是 lodash 工厂生产的对象,而 LodashWrapper 的原型是 lodash 原型 lodash.prototype 的一个`实例对象`,并非是直接指向 lodash 原型,也就是说作为一个构造器或作为一个类 LodashWrapper 原型是 lodash 原型实例,那么 LodashWrapper 实例的`__proto__.__proto__`则是 lodash 原型
+LodashWrapper 可接收两个参数,`value`为实例的`__wrapped__`提供属性值, lodash 构造器接收的参数也会由 LodashWrapper 包裹,就是 lodash 工厂生产的对象,而 LodashWrapper 的原型是 lodash 原型 Lodash.prototype 的一个`实例对象`,并非是直接指向 lodash 原型,也就是说作为一个构造器或作为一个类 LodashWrapper 原型是 lodash 原型实例,那么 LodashWrapper 实例的`__proto__.__proto__`则是 lodash 原型
 
 ```js
 let wrapper = new LodashWrapper('bmw')
-console.log( wrapper.__proto__.__proto__ === lodash.prototype ) //=> true
+console.log( wrapper.__proto__.__proto__ === Lodash.prototype ) //=> true
 ```
 
 LodashWrapper 类在 lodash 核心版本中有三个属性它们分别是,`__chain__`、`__wrapped__`和`__actions__`,而完整版本中操作五个属性`__chain__`、`__wrapped__`、`__actions__`、`__index__`和`__values__`
@@ -1672,7 +1674,7 @@ function baseWrapperValue(value, actions) {
 
 如果 seq 最后一个方法不是 chain 方法,则会直接返回最终的值,但如果实例化时的 LodashWrapper 对象显示指定是否 chain 则必须要等到 value 方法才会终结 seq,而上述是直接`new LodashWrapper()`,但是 lodash 中并没有暴露该包裹的构造器,对外的接口只有`lodash()`,lodash 构造器又不能显示指定是否 chain 对象
 
-这个时候`lodash.chain()`方法就起到了作用, chain 方法就是为 LodashWrapper 包裹对象指定显示 seq 的接口
+这个时候`Lodash.chain()`方法就起到了作用, chain 方法就是为 LodashWrapper 包裹对象指定显示 seq 的接口
 
 ```js
 console.log(lodash([2,3,4,1])
@@ -1681,7 +1683,7 @@ console.log(lodash([2,3,4,1])
   .max()
 )
 //=> 14
-console.log(lodash.chain([2,3,4,1])
+console.log(Lodash.chain([2,3,4,1])
   .map(v => v + 10)
   .sort()
   .max()
@@ -1704,8 +1706,15 @@ console.log(lodash.chain([2,3,4,1])
 使用这个方法的时候需要注意的就是`原型`和`静态`都有这样的方法,核心版本中 lodash 原型上是没有 chain 方法的,只会将 chain 当作一个操作,以下摘录至 lodash 完整版本
 
 ```js
-lodash.prototype.chain = function(){
-  return lodash.chain(this)
+// function wrapperChain() {
+//   return chain(this);
+// }
+
+// Add chain sequence methods to the `lodash` wrapper.
+// lodash.prototype.chain = wrapperChain;
+
+Lodash.prototype.chain = function(){
+  return Lodash.chain(this)
 }
 console.log(lodash([2,3,4,1])
   .chain()
@@ -1719,7 +1728,7 @@ console.log(lodash([2,3,4,1])
 
 完整版中 lodash 赋于了其原型上的 chain
 
-## lodash.mixin
+## Lodash.mixin
 
 方法可接收三个参数,参数一是目标对象或函数和参数三是可加选项对象,其中的`chain`标识是否可以链式(seq)调用,参数一和三是可选,参数二是必选,像极了 jQuery.extend 方法
 
@@ -1729,7 +1738,7 @@ console.log(lodash([2,3,4,1])
 
 lodash 解释:
 
-  Adds all own enumerable string keyed function properties of a source object to the destination object. If `object` is a function, then methods are added to its prototype as well.
+>Adds all own enumerable string keyed function properties of a source object to the destination object. If `object` is a function, then methods are added to its prototype as well.
 
 将源对象的所有可枚举字符串键控函数属性添加到目标对象。如果“object”是一个函数，那么方法也会添加到它的原型中。以下是几个利用 mixin 的例子:
 
@@ -1740,12 +1749,12 @@ _Lodash._assignIn = '_assignIn'
 _Lodash._before = function _before(){}
 
 // 默认混合到 lodash 中
-lodash.mixin(_Lodash);
+Lodash.mixin(_Lodash);
 console.log( _Lodash.prototype._assignIn ) //=> undefined
 console.log( _Lodash.prototype._before ) //=> undefined
-console.log(lodash._before) //=> [Function: _before]
-console.log(lodash._assignIn) //=> undefined
-console.log(lodash.prototype._before) //=> [Function]
+console.log(Lodash._before) //=> [Function: _before]
+console.log(Lodash._assignIn) //=> undefined
+console.log(Lodash.prototype._before) //=> [Function]
 ```
 
 属性并没有添加到 lodash 中,但是方法`_before`混入到了 lodash 原型和静态中,原型上失去原函数名
@@ -1753,7 +1762,7 @@ console.log(lodash.prototype._before) //=> [Function]
 ### 混合到指定函数中
 ```js
 // 混合到函数中
-lodash.mixin(_Lodash, _Lodash);
+Lodash.mixin(_Lodash, _Lodash);
 console.log( _Lodash.prototype._assignIn ) //=> undefined
 console.log( _Lodash.prototype._before ) //=> [Function]
 console.log(_Lodash._before) //=> [Function: _before]
@@ -1765,10 +1774,10 @@ console.log(_Lodash._before) //=> [Function: _before]
 ```js
 // 混合到普通对象中
 var obj = {}
-lodash.mixin(obj, _Lodash);
+Lodash.mixin(obj, _Lodash);
 console.log( _Lodash.prototype._assignIn ) //=> undefined
 console.log( _Lodash.prototype._before ) //=> undefined
-console.log(lodash._before) //=> undefined
+console.log(Lodash._before) //=> undefined
 console.log(obj._before) //=> [Function: _before]
 console.log(obj.prototype) //=> undefined
 ```
@@ -1777,10 +1786,10 @@ console.log(obj.prototype) //=> undefined
 ### 混入普通对象时携带其它对象
 ```js
 // 尝试混入普通函数时携带其它对象
-lodash.mixin(_Lodash, _Lodash, { '_chain': true});
+Lodash.mixin(_Lodash, _Lodash, { '_chain': true});
 console.log( _Lodash.prototype._assignIn ) //=> undefined
 console.log( _Lodash.prototype._before ) //=> [Function]
-console.log(lodash._before) //=> undefined
+console.log(Lodash._before) //=> undefined
 console.log(_Lodash)
 /* [Function: _Lodash] {
   _assignIn: '_assignIn',
@@ -1826,33 +1835,19 @@ function mixin(object, source, options) {
 }
 ```
 
-*lodash.mixin 只会混入方法不会混入属性*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+*Lodash.mixin 只会混入方法不会混入属性*
 
 # 参考链接
 
-- https://www.cnblogs.com/hefty/p/8190969.html
-- https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/isNaN
-- https://blog.csdn.net/li0978/article/details/100714987
-- https://www.cnblogs.com/xianshenglu/p/8386918.html
-- https://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-expressions
-- http://www.ecma-international.org/ecma-262/6.0/index.html
-- http://www.ecma-international.org/ecma-262/7.0/index.html
-- http://www.ecma-international.org/ecma-262/8.0/index.html
-- http://www.ecma-international.org/ecma-262/9.0/index.html
-- https://www.ecma-international.org/ecma-262/10.0/index.html
+- [Lodash eq](https://www.cnblogs.com/hefty/p/8190969.html)
+- [MDN NaN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/isNaN)
+- [位运算位掩码](https://blog.csdn.net/li0978/article/details/100714987)
+- [js 表达式与语句](https://www.cnblogs.com/xianshenglu/p/8386918.html)
+- [ES2015 表达式与语句规范](https://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-expressions)
+- [ES 6 规范](http://www.ecma-international.org/ecma-262/6.0/index.html)
+- [ES 7 规范](http://www.ecma-international.org/ecma-262/7.0/index.html)
+- [ES 8 规范](http://www.ecma-international.org/ecma-262/8.0/index.html)
+- [ES 9 规范](http://www.ecma-international.org/ecma-262/9.0/index.html)
+- [ES 10 规范](https://www.ecma-international.org/ecma-262/10.0/index.html)
 - https://tc39.es/ecma262
+- [深入理解 JavaScript Prototype 污染攻击](https://www.leavesongs.com/PENETRATION/javascript-prototype-pollution-attack.html)

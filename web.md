@@ -3399,7 +3399,7 @@ lodash 提供的函数主要分为以下几类:
 和之前 axios 一样下面就进入 [lodash 的源码](https://cdn.bootcss.com/lodash.js/4.17.15/lodash.js
 )
 
-### Core lodash 核心
+### Core lodash 核心  
 
 
 
