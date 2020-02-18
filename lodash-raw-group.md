@@ -111,19 +111,33 @@ function baseWhile(array, predicate, isDrop, fromRight) {
 
 *不要被删除和获取名字误导了,删除就是截取剩余部分,获取就是截取删除部分,都是做截取操作,过滤可以使用 Lodash.filter*
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## 对象组合
 
 有关于切片的方法分别是:
 
 1. Lodsah.chunk 创建一个元素数组，将其分为大小长度的组。如果无法均匀分割数组，则最后一块将是剩余的元素。
 2. Lodash.zip 创建一个分组元素数组，其中第一个元素包含给定数组的第一个元素，第二个元素包含给定数组的第二个元素，依此类推。
-3. Lodash.zipObject 此方法类似于_.fromPairs，不同之处在于它接受两个数组，一个是属性标识符，另一个是对应值。
-4. Lodash.zipObjectDeep 此方法类似于_.zipObject，但它支持属性路径。
-5. Lodash.toPairs 为对象创建自己的可枚举字符串键值对的数组，这些对象可以由_.fromPairs消耗。如果object是映射或集合，则返回其条目。
+3. Lodash.zipObject 此方法类似于 Lodash.fromPairs，不同之处在于它接受两个数组，一个是属性标识符，另一个是对应值。
+4. Lodash.zipObjectDeep 此方法类似于 Lodash.zipObject，但它支持属性路径。
+5. Lodash.toPairs 为对象创建自己的可枚举字符串键值对的数组，这些对象可以由 Lodash.fromPairs消耗。如果object是映射或集合，则返回其条目。
 6. Lodash.toPairsIn 与 Lodash.toPairs 类似但包括原型属性
 7. Lodash.fromPairs Lodash.toPairs的逆运算,此方法返回由键值对组成的对象
 8. Lodash.unzip Lodash.zip 逆运算
-9. Lodash.unzipWith 此方法类似于_.unzip，不同之处在于它接受iteratee来指定应如何组合重组的值。使用每个组的元素（... group）调用iteratee
+9. Lodash.unzipWith 此方法类似于 Lodash.unzip，不同之处在于它接受iteratee来指定应如何组合重组的值。使用每个组的元素（... group）调用iteratee
 
 ### 分块|打散 Lodash.chunk
 
@@ -163,8 +177,6 @@ function chunk(array, size, guard) {
 1. `Math.max` 和 toInteger 两个方法验证数字有有效值,不需要在进行是否大于小0，如果小于0 给默认值在这里就不需要,这样的做法省去了对数字的判断
 2. `Math.ceil`对长度与拆分块长度取最大可能,计算出新数组应该有多少个元素
 3. baseSlice 私有方法对数组截取,依次填充
-
-
 
 ### 对象属性数组 `#baseToPairs` toPairs toPairsIn fromPairs
 
@@ -417,3 +429,255 @@ function zipObject(props, values) {
   return baseZipObject(props || [], values || [], assignValue);
 }
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## `#createAggregator` 聚合 countBy groupBy partition keyBy
+
+1. Lodash.countBy 键或元素出现次数组成的对象
+2. Lodash.groupBy 键或元素出现组成的键值数组对象
+3. Lodash.partition 返回一个二维数组,数组元素一为回调指定为 true 的元素,元素二为回调指定为 false 的元素
+4. Lodash.keyBy 出现该键的最后一个元素组成的键值对象
+
+>聚合函数对一组值执行计算，并返回单个值，也被称为组函数
+
+下面是聚合函数使用用例:
+```js
+// orders 为用户的下单信息
+// id 为用户尖 oid 为订单id
+let orders = [
+  { id: 2, oid: 1},
+  { id: 3, oid: 2},
+  { id: 1, oid: 3},
+  { id: 2, oid: 4},
+  { id: 1, oid: 5},
+  { id: 1, oid: 6},
+]
+
+// 统计用户订单数
+console.log( lodash.countBy(orders, 'id') )
+//=> { '1': 3, '2': 2, '3': 1 }
+
+// 将用户下单信息以用户id分组查询
+console.log( lodash.groupBy(orders, 'id') )
+/*
+{ '1': [ { id: 1, oid: 3 }, { id: 1, oid: 5 }, { id: 1, oid: 6 } ],
+  '2': [ { id: 2, oid: 1 }, { id: 2, oid: 4 } ],
+  '3': [ { id: 3, oid: 2 } ] }
+ */
+```
+
+countBy,groupBy,partition 和 keyBy 四个方法都是由 createAggregator 这个基函数生成,该方法是一个聚合器,有下面两个特点:
+
+1. 可以返回累加器值
+2. 暴露通用 setter 方法设置值,比如当 countBy 时将计数的值自增一次
+
+
+首先从 countBy 角度分析一次 createAggregator, countBy 会将对象数组或一个数组中重复出现的元素用该元素或该值的键记录该重复值的次数,下面是一个可以实现该方法的 sql 语句:
+
+```sql
+SELECT elem, count(id) FROM table group by id
+```
+
+所以可以直接考虑的第一件事就是,将 createAggregator 暴露的 setter 定义为键值自增 1,首次出现则为 1, countBy 没有累加值
+
+知道了如何 setter,下面就直接附上 createAggregator 源码:
+
+```js
+function createAggregator(setter, initializer) {
+  return function(collection, iteratee) {
+    var func = isArray(collection) ? arrayAggregator : baseAggregator,
+        accumulator = initializer ? initializer() : {};
+
+    return func(collection, setter, getIteratee(iteratee, 2), accumulator);
+  };
+}
+```
+
+源码很简单,可以接收两个参数,参数一必须是一个 setter 操作函数,参数二可以是个函数返回的初始累加值,默认为空对象,`#arrayAggregator`和`#baseAggregator`就是遍历集合做 setter 操作
+
+*除了 partition 默认为返回两个元素组成的空数组,其余三个方法都没有初始累加值*
+
+由上面几点,可以得出,基函数 createAggregator 只做一件事件,循环对累加值做 setter 操作:
+
+```js
+const aggregator = (array, setter, iteratee, initializer) => {
+  let index = -1,
+      length = array.length,
+      value, acc = initializer ? initializer() : {}
+  // 循环做 setter 操作
+  while ( ++index < length) {
+    value = array[index]
+    setter(acc, value, iteratee(value), array)
+  }
+  return acc
+}
+
+// count by
+let arr = [1,2,1,3,2]
+console.log( lodash.countBy(arr))
+// => { '1': 2, '2': 2, '3': 1 }
+let res = aggregator(arr, (acc, value, iv, array) => {
+  if( acc.hasOwnProperty(value) ){
+    ++acc[value]
+  } else {
+    acc[value] = 1
+  }
+}, value => value)
+// getIteratee 方法如果回调值为 undefined 则回调方法是 identity
+console.log( res )
+// => { '1': 2, '2': 2, '3': 1 }
+```
+
+countBy 的 setter 会使用 Object 原型的 hasOwnProperty 方法判断累加器是否包含该值键,如果有则自增,没有则初始为1,就这样简单,下面附上其源码:
+
+```js
+var countBy = createAggregator(function(result, value, key) {
+  if (hasOwnProperty.call(result, key)) {
+    ++result[key];
+  } else {
+    baseAssignValue(result, key, 1);
+  }
+});
+```
+
+### groupBy
+
+groupBy 就是将重复键出现的值组成一个数组,其 setter 如下:
+
+```js
+// group by
+// 比如以名字长度为分组条件
+let users = [
+  { money: [100, 500], name: 'Qlover' },
+  { money: [500, 50], name: 'Lee' },
+  { money: [200, 150], name: 'Edward' },
+  { money: [350, 100], name: 'Fred' }
+]
+console.log( lodash.groupBy(users, 'name.length') )
+/*
+{ '3': [ { money: [Array], name: 'Lee' } ],
+  '4': [ { money: [Array], name: 'Fred' } ],
+  '6':
+   [ { money: [Array], name: 'Qlover' },
+     { money: [Array], name: 'Edward' } ] }
+ */
+console.log( aggregator(users, (acc, value, key, array) => {
+  if( acc.hasOwnProperty(key) ){
+    acc[key].push(value)
+  } else {
+    acc[key] = [value]
+  }
+}, value => value['name'].length) )
+// 指定回调返回 name 值的长度
+/*
+{ '3': [ { money: [Array], name: 'Lee' } ],
+  '4': [ { money: [Array], name: 'Fred' } ],
+  '6':
+   [ { money: [Array], name: 'Qlover' },
+     { money: [Array], name: 'Edward' } ] }
+ */
+```
+
+由于 Lodash 源码中有专门处理回调的 getIteratee 方法,这里只是做个模拟,下面附上其源码:
+
+```js
+var groupBy = createAggregator(function(result, value, key) {
+  if (hasOwnProperty.call(result, key)) {
+    result[key].push(value);
+  } else {
+    baseAssignValue(result, key, [value]);
+  }
+});
+```
+
+### keyBy
+
+同样的对于 keyBy setter 处理的是键的最后一个值,那么简单点也就是遍历一次,就给对应键赋值:
+
+```js
+// key by
+users = [
+  { money: 100, name: 'Qlover' },
+  { money: 500, name: 'Lee' },
+  { money: 200, name: 'Qlover' },
+  { money: 350, name: 'Fred' }
+]
+console.log( lodash.keyBy(users, 'name') )
+/*
+{ Qlover: { money: 200, name: 'Qlover' },
+  Lee: { money: 500, name: 'Lee' },
+  Fred: { money: 350, name: 'Fred' } }
+ */
+console.log( aggregator(users, (acc, value, key, array) => {
+  acc[key] = value
+}, value => value['name']) )
+/*
+{ Qlover: { money: 200, name: 'Qlover' },
+  Lee: { money: 500, name: 'Lee' },
+  Fred: { money: 350, name: 'Fred' } }
+ */
+```
+
+其源码:
+
+```js
+var keyBy = createAggregator(function(result, value, key) {
+  baseAssignValue(result, key, value);
+});
+```
+
+baseAssignValue 就是直接做赋值操作的基函数,可参考核心部分
+
+
+### partition
+
+该方法与前面的三个方法有一个不同的地方就是,返回的是个二维数组,如果没值不会返回空对象,而是两个元素组成的空数组,其源码和其 setter 如下:
+
+```js
+let users = [
+  { money: 100, name: 'Qlover' },
+  { money: 500, name: 'Lee' },
+  { money: 200, name: 'Qlover' },
+  { money: 350, name: 'Fred' }
+]
+
+console.log(lodash.partition(users, value => value.money > 200))
+/*
+[ [ { money: 500, name: 'Lee' }, { money: 350, name: 'Fred' } ],
+  [ { money: 100, name: 'Qlover' },
+    { money: 200, name: 'Qlover' } ] ]
+ */
+console.log( aggregator(users, (acc, value, key, array) => {
+  // 真值在元素一里面
+  // 假值在元素二里面
+  acc[key ? 0 : 1].push(value)
+}, value => value.money > 200, () => [[], []] ) )
+/*
+[ [ { money: 500, name: 'Lee' }, { money: 350, name: 'Fred' } ],
+  [ { money: 100, name: 'Qlover' },
+    { money: 200, name: 'Qlover' } ] ]
+ */
+
+
+// 源码
+var partition = createAggregator(function(result, value, key) {
+  result[key ? 0 : 1].push(value);
+}, function() { return [[], []]; });
+```
+
+*以是为了阐述在 lodash 中将一系列类似操作使用统一的接口暴露的过程,并且只要是基于该接口或该方法就可以实现想要的结果,思想才是最主要的*

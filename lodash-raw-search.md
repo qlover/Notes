@@ -30,7 +30,7 @@ console.log( lodash.sortedIndexBy(objects, { 'x': 4 }, 'x') )
 // => 0
 ```
 
-该方法基本上是所有 sorted 方法的基函数,首先`#baseSortedIndex`是直接生成 sorteIndex,sorteIndexOf 这类方法的基函数,而该方法的内部会使用下面二个条件判断是否使用 baseSortedIndexBy 方法:
+该方法基本上是所有 sorted 方法的实现的函数,首先`#baseSortedIndex`是直接生成 sorteIndex,sorteIndexOf 这类方法实现的函数,而该方法的内部会使用下面二个条件判断是否使用 baseSortedIndexBy 方法:
 
 1. sorted 方法的参数二是数值类型(不包括 NaN)
 2. 搜索的数组在常量`HALF_MAX_ARRAY_LENGTH`范围内(2147483647 个长度)
@@ -180,10 +180,113 @@ function baseSortedIndex(array, value, retHighest) {
 
 ## 键值查找 find 
 
-1. lodash.findIndex 此方法类似于_.find，不同之处在于它返回第一个元素谓词的索引返回true，而不是元素本身。
-2. lodash.findLastIndex 此方法类似于_.findIndex，不同之处在于它从右到左遍历collection的元素。
+1. lodash.findIndex 此方法类似于 lodash.find，不同之处在于它返回第一个元素谓词的索引返回true，而不是元素本身。
+2. lodash.findLastIndex 此方法类似于 lodash.findIndex，不同之处在于它从右到左遍历collection的元素。
 3. lodash.find 遍历collection的元素，返回第一个元素谓词，返回true。谓词由三个参数调用：（值，索引|键，集合）。
-4. lodash.findLast 此方法类似于_.findIndex，不同之处在于它从右到左遍历collection的元素。
-5. lodash.findKey 此方法类似于_.find，不同之处在于它返回第一个元素谓词的键，而不是元素本身，返回谓词。
-6. lodash.findLastKey 此方法类似于_.findKey，不同之处在于它以相反的顺序遍历集合的元素。
+4. lodash.findLast 此方法类似于 lodash.findIndex，不同之处在于它从右到左遍历collection的元素。
+5. lodash.findKey 此方法类似于 lodash.find，不同之处在于它返回第一个元素谓词的键，而不是元素本身，返回谓词。
+6. lodash.findLastKey 此方法类似于 lodash.findKey，不同之处在于它以相反的顺序遍历集合的元素。
+
+其中 findIndex 和 findLastIndex 直接使用 `#baseFindIndex` 实现,find 和 findLast 分别使用 findIndex 和 findLastIndex 并借助基函数`#createFind`实现,findKey 与 findLastKey 则是由 `#baseFindKey` 直接实现
+
+### 数组索引搜索 `#`baseFindIndex
+
+该方法很简单,主要由 indexOf 算法实现,并且直接支持回调和是否从右向前遍历,至于 findIndex 和 findLastIndex 接口的 predicate 参数可以是函数,值或数组,这一点可参考 getIteratee 部分具体的值转换,当然 findLastIndex 方法也要指定从右向前遍历
+
+其源码:
+```js
+function baseFindIndex(array, predicate, fromIndex, fromRight) {
+  var length = array.length,
+      index = fromIndex + (fromRight ? 1 : -1);
+
+  while ((fromRight ? index-- : ++index < length)) {
+    if (predicate(array[index], index, array)) {
+      return index;
+    }
+  }
+  return -1;
+}
+```
+
+### `#`createFind
+
+createFind 生成的函数与 baseFindIndex 方法首先第一个不同的地方就是遍历的对象不同, createFind 可以遍历数组和对象,而 baseFindIndex 只能遍历数组,所以一个可以返回任意类型:
+
+```js
+let users = [
+  { money: [100, 500], name: 'Qlover' },
+  { money: [500, 50], name: 'Lee' },
+  { money: [350, 100], name: 'Fred' }
+]
+
+console.log( lodash.findIndex(users[0], 'name') )
+// => -1
+console.log( lodash.findIndex(users, obj => obj.name.length < 5) )
+// => 1
+console.log( lodash.findIndex(users, 'name') )
+// => 0
+
+console.log( lodash.find(users[0], val => val.length > 1 ) )
+// => [ 100, 500 ]
+console.log( lodash.find(users[0], val => val.length > 3 ) )
+// => Qlover
+// 返回第一个满足条件的元素
+console.log( lodash.find(users, obj => obj.name.length < 5) )
+// =>{ money: [ 500, 50 ], name: 'Lee' }
+```
+
+createFind 方法也是一个典型的函数式的方法,接收的参数就是 findIndex 或 findLastIndex,间接来说也就是 createFind 方法实现也离不开 baseFindIndex,那么 createFind 生成的函数自然也可以使用 baseFindIndex,且回调可以是 getIteratee 指定值,比如一个函数或一个键值,直接看源码吧:
+
+```js
+function createFind(findIndexFunc) {
+  // perdicate 为用户自定义回调
+  return function(collection, predicate, fromIndex) {
+    var iterable = Object(collection);
+    if (!isArrayLike(collection)) {
+      // 不是一个数组
+      // 使用 getIteratee 重新将值进行转换成新回调
+      // 如果用户并未传入,好么 undefined 会被转换成 identity
+      var iteratee = getIteratee(predicate, 3);
+      
+      collection = keys(collection);
+      // 那么新的搜索回调的返回值由刚刚重新转换后回调 iteratee 的值
+      // 如果用户自定义为 key 那就取 key 值
+      // 如果为函数...
+      // 如果为数组...
+      // 这些都将作为搜索对象时的回调
+      predicate = function(key) { return iteratee(iterable[key], key, iterable); };
+    }
+    var index = findIndexFunc(collection, predicate, fromIndex);
+    return index > -1 ? iterable[iteratee ? collection[index] : index] : undefined;
+  };
+}
+```
+
+其将源码对比,会发现 createFind 生成的方法只不过比 baseFindIndex 生成的方法多了对象这种情况,处理就是将默认或用户指定的回调做一步包装得到搜索时调用的回调
+
+
+### 键的搜索 `#`baseFindKey
+
+如果熟悉了`#createBaseFor`这个基函数,那么理解起该方法也就简单许多,createBaseFor 可以理解为 lodash 中所有遍历的抽象类,比如 baseEach 这个核心思想方法之一就是由 createBaseFor 生成,具体可参考 lodash 核心 array 部分
+
+createBaseFor 思想就是接收一个对象,该对象可以是类数组也可以是一个对象,取得这个对象的可枚举属性组成的数组,遍历该数组分别将对象的属性值、当前属性和当前对象本身三个参数传递给回调,如果回调返回 false 则返回遍历对象,也正是因为如果遍历对象返回 false 则会停止遍历,这对于搜索来说可不能这样
+
+比如搜索的对象中值为 true 的第一个键,遍历的第一个值就为 false、null 或者 0 那不是直接就返回了, baseFindKey 就在这个问题的基础上对 createBaseFor 调用的回调更上一屋的包装,这一点才是该方法重点
+
+```js
+// eachFunc 可能是 createBaseFor() 或 createBaseFor(true)
+function baseFindKey(collection, predicate, eachFunc) {
+  var result;
+  eachFunc(collection, function(value, key, collection) {
+    // 本身 createBaseFor 调用的该回调返回 false 这里的话就会直接返回 result
+    // 还未搜索直接是 undefined
+    if (predicate(value, key, collection)) {
+      result = key;
+      return false;
+    }
+  });
+  return result;
+}
+```
+
 
