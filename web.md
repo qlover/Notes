@@ -3251,131 +3251,885 @@ Host: http://local.notetest.com:81 Method: GET
 以上就是跨域时会遇见的三种情况
 
 
-# JavaScript 进阶(函数式，高阶函数)
+# JavaScript 进阶 范式的转变 函数式
 
-先来一段理论上的话：函数式编程是一种编程范式-一种构建计算机程序的结构和元素的方式-将计算视为对数学函数的评估，并且避免了状态和可变数据的更改,来自[wiki](https://en.wikipedia.org/wiki/Functional_programming)
+函数式编程是一种编程范式-一种构建计算机程序的结构和元素的方式-将计算视为对数学函数的评估，并且避免了状态和可变数据的更改
 
-## 纯函数(Pure functions)
+[来自](https://en.wikipedia.org/wiki/Functional_programming)
+
+它既是从特定角度去看待问题的思维,又是实现思维的配套工具,现代编程语言常常是多范式,支持多样化的编程范式,如面向对象、元编程、函数式、过程式等等。
+
+1. 引用透明,值或状态的不可变性,无副作用
+2. 变换,记忆、映射、筛选、化约/折叠
+
+## 范式的转变
+
+> 编程范型、编程范式或程序设计法（英语：Programming paradigm），（范即模范、典范之意，范式即模式、方法），是一类典型的编程风格，是指从事软件工程的一类典型的风格（可以对照方法学）。如：函数式编程、程序编程、面向对象编程、指令式编程等等为不同的编程范型。
+
+如熟悉的面向对象,面向过程什么的这就是范式,当然范也不止局限与程序上我们所熟知的面向对象，面向过程这类似编程思想,更多的应该是对程序执行的看法,比如面向对象思想中程序是一系列相互作用的对象，而在函数式思想中一个程序会被看作是一个无状态的函数计算的序列
+
+[来自百度百科](https://baike.baidu.com/item/%E7%BC%96%E7%A8%8B%E8%8C%83%E5%9E%8B?fromtitle=%E7%BC%96%E7%A8%8B%E8%8C%83%E5%BC%8F&fromid=23696164)
+
+下面以一个字符串数组为例子,取出数组中字符串长度大于3,并将每个元素首字母大写,并以逗号分隔为字符串
+
+```js
+const capitalize = str => str.replace(str[0], str[0].toUpperCase())
+let names = ['jan', 'Tyrande', 'illidan', 'maiev', 'Dk']
+```
+
+命令式:
+
+```js
+let result = []
+for(let i = 0, len = names.length; i < len; ++i){
+  if( names[i].length > 3 ){
+    result.push(capitalize(names[i]))
+  }
+}
+result = result.reduce( (x, y) => x + ',' + y )
+console.log(result)
+// => Tyrande,Illidan,Maiev
+```
+
+函数式:
+
+```js
+console.log( names.filter(s => s.length > 3)
+  .map(capitalize)
+  .reduce( (x, y) => x + ',' + y )
+)
+// join(',')
+// => Tyrande,Illidan,Maiev
+```
+
+在这样的问题上我个人更喜欢函数式的风格
+
+
+## 引用透明 纯函数(Pure functions)
 
 如果给定相同的参数，它将返回相同的结果，并且不会引起任何明显的副作用,这个副作用就是不会修改全局对象或通过引用传递参数的变量，也就是每一个函数，每一个功能都是独立的，不会影响到程序其它任何一处地方
 
+首先借作者[TK](https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/)的一个例子:
 
-首先借作者 [TK](https://www.freecodecamp.org/news/functional-programming-principles-in-javascript-1b8fc6c3563f/) 的一个例子:
 ```js
 let PI = 3.14
 const calculateArea = radius => radius * radius * PI
 console.log(calculateArea(10)) //=> 314
 ```
 
-这个方法可以接收一个半径作为参数,返回为这个半径的圆的面积,但是如果当变量 PI 的值被改变,那们就违背了,给定相同的参数相同的结果的这一定义,因为一个纯函数是不是*不会修改全局对象或通过引用传递参数的变量*,下面是另一个例子，如何将上面方法变成一个纯函数
+这个方法可以接收一个半径作为参数,返回为这个半径的圆的面积,但是如果当变量 PI 的值被改变,那们就违背了,给定相同的参数相同的结果的这一定义,因为一个纯函数是不会修改全局对象或通过引用传递参数的变量,下面是另一个例子，如何将上面方法变成一个纯函数:
 
 ```js
 let PI = 3.14
 const calculateArea = (radius, pi) => radius * radius * pi
-console.log( calculateArea(10, PI) )
+console.log(calculateArea(10, PI)) //=> 314
 ```
 
-如果用之前的方法将 radius 的值变成 100,那么返回结果就会变成 31400,也就是说上上一个例子传入的参数和返回的结果返回了不同的结果，不纯，而这个例子就不会出现上面所说传入参数和返回参数不相同的情况，纯
+即使将 PI 值改变和 radius 改变,方法 aclculateArea 返回值与变量PI没有任何关系,有关的而是参数 raduis 和 pi
 
-## 从声明式转变到命令式
+也正是因为纯函数这种结构在函数式中就显得十分重要,函数式的引用透明和变换都不能离开纯,如果一个函数不纯,比如这个时候将该函数“记忆”起来,函数的内部函数的外部状态都可以被改变,就不能作为记忆来使用,记忆后是不能改变任何状态的，应该是无副作用，显然纯函数显得十分重要
 
-我常会将一些简单的情事给复杂化,且有时候对自己的代码没有自信,常常出现问题不能及时定位到关键地方,比如有这样一个需求，将一组数据中的所有数值相加,这组数据中可以能为字符串,也有可能有字符串数字,如下
+
+## 引用透明 函数式的数据结构
+
+“异常”违背了大多数函数式语言所遵循的一些前提条件。函数式偏好没有副作用的纯函数,抛出异常的行为本身就是一种副作用，会导致程序进入异常流程。函数式语言以操作值为其根本，因此喜欢在返回值里表明错误并作出响应，这样就不需要打断程序的一般流程了
+
+
+### 函数式的错误处理
+
+出现异常时的返回值的限制是首先会遇阻碍,语言规定了方法只能返回一个值，当然可以把多个值放进一个对象里面或数组里一起返回
+
+利用对象返回多个值:
+```js
+const divide = (x, y) => y == 0 ?
+  {'exception' : new Error('被零除')} : {'answer': x / y}
+
+console.assert( 2 == divide(4, 2) )
+// Assertion failed
+console.assert( 2 == divide(4, 2).answer )
+// 什么都没有
+console.assert( 2 == divide(4, 0).answer )
+// Assertion failed
+```
+
+当断言失败时并不知道发生了什么，也就是有什么错误类型,当成功也不知道是否成功,还需要看是否包含了某个键，所以用键值对返回多个值有以下三个缺点:
+
+1. 键没有安全性可能会随时改变,也就是不能捕获到类型方面的错误(将键变成指定类型可有限的处理)
+2. 方法的调用者无法直接得知执行是否成功，还需要用键进行对比
+3. 没有办法强制结果只包含一个键值对
+
+### Either 数据结构
+
+Either 设计规定它要么有左值要么有右值,但绝对不会同时存在两者。这种数据结构也叫不相交联合体(disjoint union),错误处理是 Either 的主要用途之一
+
+*函数式习惯将异常置于左值,正常结果置于右值*
+
+但通常的对于此类数据结构,如果数据类型不能明确,键不能明确或者是状态的未知。比如 Scala 语言天生属于函数式 Either 也是得到了实现,再比如 Java 虽然天生不属于函数式但有泛型可以选择性的实现 Either
+
+JavaScript 天生也是一个多范式语言,也因为 JavaScript 的鸭子类型众多在该方面上也显得有不足
+
+下面则利用 ES10 的特性稍严谨的实现一个 Either 类的例子:
 
 ```js
-let withholds = [ 3, 'good', '7a', '5', 'hello','2', '11', 'name']
+class Either {
+  // ES10 # 私有
+  #left = null
+  #right = null
 
-let total = 0 // 放置一个变量得到累计合
-for (let i = 0; i < withholds.length; ++i) {
-  if (!isNaN(withholds[i])) { // 判断是否是一个数字
-    total += parseInt(withholds[i]) // 将这个元素转换成数字并累加
+  // !!!此处应该为私有的构造器，访问外界的修改
+  // ES10 还未实现私有的构造器
+  // 这里模拟一次私有的构造器
+  constructor(left, right){
+    this.#left = left
+    this.#right = right
   }
-}
-console.log(total, typeof total) //=> 21 'number'
 
-let sum = withholds
-  .filter( v => !! +v ) // 过滤到不是数字的元素
-  .map( v => +v ) // 将这个元素转换成数字
-  .reduce( (prev, next) => prev + next ) // 累加
-console.log(sum, typeof sum) //=> 21 'number'
-```
-不难发现吧，使用 for 循环的方式，不仅用了更多的变量,并且逻辑判断上也做了处理代码上也显得臃肿紧凑,想想，如果当 isNaN 判断数字变成正则，又或者还是用 parseInt() 判断是否是一个数字时,不就显得枯燥和复杂吗?而上述例子的下面的写法中,一行做一件事,并且也没有使用其它变量或方法,逻辑特别清晰,维护和修改起来也特别简单,是你将会怎么选择呢?
-
-
-## 高阶函数
-
-高阶函数时，指的就是是:
-
-1. 将函数作为函数的参数
-2. 将函数作为返回值
-
-
-
-
-
-## 组合函数
-```javascript
-// compse of redux
-const compose = (...fns) => {
-  if (fns.length === 0) return arg => arg
-  if (fns.length === 1) return fns[0]
-  return fns.reduce((a, b) => (...args) => a(b(...args)))
-}
-const addOne = x => x + 1;
-const square = x => x * x;
-let addOneThenSquare = compose(addOne, square)
-console.log(addOneThenSquare(2)) // 5
-addOneThenSquare = compose(square, addOne)
-console.log(addOneThenSquare(2)) // 9
-```
-
-## AOP
-
-## 柯里化
-把接受多个参数的函数变换成一系列接受单一参数（从最初函数的第一个参数开始）的函数的技术（注意是单一参数）
-
-1. 参数复用
-```javascript
-const check = reg => txt => reg.test(txt);
-const hasNumber = check(/\d+/)
-console.log(check(/\d+/)('ad22f')) // => true
-console.log(hasNumber('ad22f')) // => true
-```
-2. 提前确认
-
-判断第一次时就返回函数，避免后面重复判断,比如事件判断
-```javascript
-// common
-var addEvent = function(ele, type, fn, isCapture) {
-  if(window.addEventListener) {
-    ele.addEventListener(type, fn, isCapture)
-  } else if(window.attachEvent) {
-    ele.attachEvent("on" + type, fn)
+  getLeft(){ return this.#left }
+  getRight(){ return this.#right }
+  isLeft(){ return !!this.#left }
+  isRight(){ return !!this.#right }
+  static setLeft(left){
+    return new Either(left, null)
   }
-}
-// 每一次调用都会判断一次
+  static setRight(right){
+    return new Either(null, right)
+  }
 
-// curry
-var addEvent = (function() {
-  if(window.addEventListener) {
-    return function(ele, type, fn, isCapture) {
-      ele.addEventListener(type, fn, isCapture)
+}
+
+const divide = (x, y) => y == 0 ?
+  Either.setLeft(new Error('除数不能为0')) :
+    Either.setRight( x / y)
+    
+const result = divide(4, 2)
+console.assert( 2 == result.getRight() )
+// 什么都没有
+console.assert( 200 == result.getRight() )
+// Assertion failed
+```
+
+不再需要寻找键而判断执行是否成功,直接利用 either 类的特点(正常结果为右值),并且一旦内部方法设定好后其 left right 记录值不会在改变,也做到了“键”的唯一,无论异常还是正常结果都多了一次间接层,调用 get 方法,恰恰也是这间接层为实现`缓求值`提供了可靠的基础
+
+*借用 JavaScript 超集 TypeScript 可以弥补 JavaScript 明确类型的不足,或是借助第三方库`Ramda.js`这个函数式库*
+
+### Either 包装异常
+
+
+## 列表变换的基本操作
+
+### 筛选 与 映射
+
+筛选(filter)根据用户定义的条件筛选列表中的条目,并产生一个较小的新列表
+
+映射(map)操作对原集合的每一个元素执行给定的函数,从而变换成一个新的集合,
+
+ES5 提供的两个支持函数式的方法 Array.prototype.filter 和 Array.prototype.map 分别就对应得筛选和映射
+
+### 折叠(fold)\化约(reduce)
+
+函数式的语言中 foldLeft 和 reduce 方法操作在功能上大致生命,但根据具体的编程语言而有微妙的区别
+
+两者都用一个累加器(accumulator)来收集每一次处理的集合,reduce 一般可指定一个初始的累积器,而 flod 初始累积器始终为空,并且 fold 或 recude 都应该是外排方法不应该改变原集合,折叠运算或化约运算常常用在需要从一个集合处理产生另一个大小不同的集合或单一值的情况
+
+最简单明了的一个例子就是利用折叠运算,也就是使用 reduce 这样的方法求一个数组元素的和
+
+*需要把集合分成一小块一小块来处理的时候就可以折叠或化约*
+
+
+## 变换 函数的部分施用
+
+使一个多参数函数得以省略部分参数，从而转化为一个参数数目较少的函数，也就是让函数先作用其中一些参数
+
+*柯里化可以算作是部分施用的一个特殊例子*
+
+柯里化和函数的部分施用都是从数学里借用过来的编程方法,这两种方法以不同的面目出现在各种类型的语言里,在函数式语言中尤其普遍,他们都有能力处理操纵方法的参数数目
+
+虽然看起来柯里化和部分施用效果一样,但是这两种方法区分很重要,而且很容易被错误的理解,虽然有时候这两种方法的返回结果一致,但两种方法裁然不同
+
+*与这两个容易搞混的还有一个叫偏函数*
+
+### 部分施用(Partial application)
+
+下面借作者 Neal Ford 在《函数式编程思维》里的一个例子看什么是部分施用,作者使用 Scala,这里则使用 JavaScript 变种实现:
+
+```js
+const price = product => (({
+  'apple': 140,
+  'orange': 223,
+})[product])
+
+const withTax = (cost, country) => (({
+  'Chain': cost * 2,
+  'USA': cost * 3,
+})[country])
+
+console.log( withTax( price('apple'), 'Chain' ) )
+// => 280
+console.log( withTax( price('orange'), 'USA' ) )
+// => 669
+
+const ChainTaxed = cost => withTax(cost, 'Chain')
+const USATaxed = cost => withTax(cost, 'USA')
+
+console.log( ChainTaxed(price('apple')) ) //=> 280
+console.log( USATaxed(price('orange')) ) //=> 669
+```
+
+price 是一个使用映射获取水果单价的方法, withTax 是一个计算不同地区的水果单价和税后的方法(这里就将州变成国家),首先直接调用 withTax 传入水果单价和国家,结果是预期的结果,但每一次调用 withTax 都要带上相同的国家就显得累赘,这时可以对国家参数做部分施用,得到一个固定了国家参数值的函数,这样处理后,像 ChainTaxed 方法只需要传入水果单价就可以了,这看上去显然和柯里化没有什么差别,但如果提前做两个参数或更多的参数,这就和柯里化有小小的区别了
+
+下面再借作者潘俊的《JavaScript函数式编程思想》中的部分应用的一个例子,其获取一个指定范围内的数字序列如下:
+
+```js
+// [start, end) 区间范围
+const rangeRoutine = (step, start, end) => {
+  let seq = [],
+      index = start - 1
+  while( ++index < end && index * step < end &&
+    seq.push( index * step) ){}
+  return seq
+}
+console.log( rangeRoutine(1, 0, 6) )
+// =>[ 0, 1, 2, 3, 4, 5 ]
+```
+
+一个再简单不过的方法创建一 0 开始到 6 结束并且元素步长为 1 的数字序列
+
+方法的默认参数是 ES6 提供的特性,可以方便的对方法进行调用,如果这个例子中,步长默认为1或开始默认为6,只需要告知方法的结束位置即可,下面则在 rangeRoutine 方法不改变形参位置基础之上给步长做一个默认参数调用 rangeRoutine
+
+```js
+const rangeRoutineByStep = step => 
+  (start, end) => rangeRoutine(step, start, end)
+const rangeRoutineByStep1 = rangeRoutineByStep(1)
+
+console.log( rangeRoutineByStep1(0, 6) )
+// => [ 0, 1, 2, 3, 4, 5 ]
+```
+
+*以上例子完全可以在 rangeRoutine 重构,这里只是为了更清晰一下再做什么事*
+
+原来的 rangeRoutine 方法分成了两步调用,第一次记住了步长这个参数,第二次则是提供了开始与结束位置的参数,此时这种调用方式就叫部分施用(Partial Application),柯里化再此基础上将施用的参数只是变成了一个参数,也就是单一的参数,所以柯里化也是部分施用的一种特殊例子,但好像柯里化的名词更出名一点
+
+### 柯里化(Currying)
+
+使一个多参数函数变成一连串单参数的函数的变换，其描述的是变换过程，不涉及变换后对函数的调用，调用都可以决定对多少个参数实施变换，余下的部分将衍生为一个参数数目较少的新函数,首先下面是一个简单的例子:
+
+```js
+let list = [1,2,3,4,5,6]
+const mod = x => y => !(y % x)
+
+console.log( list.filter(mod(2)) )
+// => [ 2, 4, 6 ]
+console.log( list.filter(mod(3)) )
+// => [ 3, 6 ]
+```
+
+这个例子没什么用,上面的 rangeRoutineByStep1 返回的函数可以在接收两个参数,这个行为叫部分施用,现在如果将序列开始位置和结束位置再进行一次部分施用,比如将开始位置默认变成0,下面再用 rangeRoutineByStep1 方法重新将参数再省略一个得到一个柯里化后的结果:
+
+```js
+const rangeRoutineFrom0 = end => rangeRoutineByStep1(0, end)
+console.log( rangeRoutineFrom0(6) )
+// => [ 0, 1, 2, 3, 4, 5 ]
+```
+
+结果依然是预期的结果,中间将开始位置和结束位置分开进行部分施用,那么就将原来 rangeRoutine 方法进行了三步调用,每一步都清晰每一步再做什么,当然上面这几个例子手动演示了如何实现一个参数部分施用的过程,在一些支持函数式的语言中都有专门做这件事的方法或语言特性
+
+
+### 偏函数(Partial Function)
+
+尽管在英文名称上与部分施用相似,但偏函数并不生成部分施用函数,它的真正用途是描述只对定义域中一部分取值或类型在意义的函数,其参数被限定了取值范围,比如数学上的 1/0 是无意义的
+
+*偏函数在代码上来说就是对部分施用参数时增加了对参数范围限定的手段*
+
+## 变换 记忆 缓存 
+
+记忆指在函数级别上对需要多次使用的值进行缓存的机制,比如有一个反复调用的函数，每一次根据一组特定的参数求得结果之后,就用参数值做查找用的键,把结果缓存起来,以后当函数又遇到相同参数的时候,就不需要重新计算一遍了,直接返回缓存的结果,这样的做法是计算机科学一种典型的折衷方案
+
+> 用更多的内存去换取长期来说更高的效率
+
+只有纯函数才适用缓存技术,两种方法实现缓存:
+
+1. 手动实现数组结构上的缓存
+2. 自动了采用有性记忆的方法
+
+### 缓存
+
+直接的缓存属于手动性的对方法结果进行缓存,比如一个方法接收参数1返回2,那么就将这个方法的参数1和返回值2做缓存,下一次调用该方法时同样的参数1直接返回缓存的结果,不再进行复杂的计算,
+
+假如说有一个方法执行了特别复杂的运算(这里为计算一个数是否是素数),如果这个参数是5:
+
+1. 只缓存结果,只将5这个数结果缓存起来,下一次方法再遇到这个值就直接使用缓存
+2. 缓存所有值,缓存从 1至5数字之间所有数的结果,也就是缓存所有可能的结果,不管传入什么值,直接取缓存
+
+下面利用上述柯里化方法没有缓存的例子:
+
+```js
+// 借用上面 rangeRoutineByStep1 方法产生一个 [start, end) 区间的序列
+// !!! 不包括传入的素数,因为判断素数就是从大于1小于本身数之间做判断
+const rangeRoutineFrom2 = end => rangeRoutineByStep1(2, end)
+
+// 遍历数列时取余数判断
+// true 表示整除没有余数,y 不是 x 的因数
+// false 表示有余数,y 是 x 的因数
+const mod = x => y => !(x % y)
+
+// 素数计算
+// true 表示是素数
+// false 表示不是素数
+const prime = number =>
+  !rangeRoutineFrom2(number).filter(mod(number)).length
+
+console.assert( prime(11) )
+// 什么都没有
+console.assert( prime(10) )
+// Assertion failed
+```
+
+其中不管是多少次参数11或10都会将上述所有的步骤都计算一次,如果当这个数是100，1000，首次虽然避免不了,但第二次,第三次...
+
+下面使用一个映射表缓存结果:
+
+```js
+let cacheMap = new Map()
+const prime = number => {
+  if( !cacheMap.has(number) ){
+    cacheMap.set(number, !rangeRoutineFrom2(number)
+      .filter(mod(number)).length
+    )
+  }
+  return cacheMap.get(number)
+}
+
+console.assert( prime(11) )
+// 什么都没有
+console.assert( prime(10) )
+// Assertion failed
+console.dir( cacheMap )
+//=> Map { 11 => true, 10 => false }
+```
+
+以上缓存了结果,如果要缓存可能出现的任何值,那么对于这里求素数来说,首次执行的时候复杂度总会是O(^2),但一旦中间可能出现的所有值被缓存,第二次后可想该效率会提升多少
+
+
+
+### 记忆
+
+不再像缓存只针对结果进行缓存,而针对整个方法,一般来说就是将需要记忆的函数定义成闭包,然后对该闭包执行`memoize()`方法来获取一个新函数,以后每一次调用这个新函数的时候,其结果就会被缓存,有点像是在缓存的基础上加了一个"壳",且被该方法应该满足以下两个条件:
+
+1. 纯,没有副作用
+2. 不依赖任何外部信息
+
+再不改变 prime 方法时,利用 lodash.memoize() 方法完成对 prime 方法的记忆:
+
+```js
+const prime = lodash.memoize(number =>
+  !rangeRoutineFrom2(number).filter(mod(number)).length)
+
+console.assert( prime(10) )
+console.assert( prime(11) )
+// => Assertion failed
+console.log( prime.cache.__data__.hash.__data__ )
+// => [Object: null prototype] { '10': false, '11': true }
+```
+
+与上述对结果的缓存一致,只是并未改变原方法的前提下直接将方法做记忆,这样也同时完成了方法的自动缓存
+
+
+
+## 变换 缓求值(Lazy Evaluation)
+
+缓求值指尽可能的推迟求解表达式,不会和缓存那样先将值预先算好,而是在需要使用的时候才落实下来,这样的好处有以下三点:
+
+1. 复杂的计算只有到绝对必要使用的时候才执行
+2. 可以建立一个无限大的集合,只要一直接到请求就一直送出元素
+3. 使用映射、筛选等概念做高效求值
+
+
+> 只能被1和它本身的整除的自然数叫素数或质数
+
+还是以上述的素数为例子,这一次不判断元素是否是一个素数,而是通过一个素数查找到下一个素数,借用 Lodash.curry 方法直接对 rangeRoutine 柯里化，解决繁琐的手动对 rangeRoutine 柯里化,并且提供一个寻找下一个素数的迭代方法(迭代子) next() 方法,如下:
+
+```js
+// lodash.curry 直接对方法柯里化
+const rangeRoutine = lodash.curry((step, start, end) => {
+  let seq = [],
+      index = start - 1
+  while( ++index < end && index * step < end &&
+    seq.push( index * step) ){}
+  return seq
+})
+const mod = x => y => !(x % y)
+
+// 将柯里进行了部分施用
+const prime = number =>
+  !rangeRoutine(1,2)(number).filter(mod(number)).length
+
+// 默认最后一个素数为1
+let last = 1
+// 可迭代下一个素数的迭代子
+const next = () => {
+  const nextTo = number => prime(++number) ?
+    last = number : nextTo(number)
+  return nextTo(last)
+}
+
+console.log( next(), last ) //=> 2 2
+console.log( next(), last ) //=> 3 3
+console.log( next(), last ) //=> 5 5
+console.log( next(), last ) //=> 7 7
+// ...
+
+```
+
+将 last 变量和 next 方法看作是一个背后用于存储数据的集合,每当我们需要得到下一个素数时,会调用 next 计算出 last 后的第一个素数并修改它,当下次调用 next 才会计算,不会像 memoize 方法，每一次遍历的数列会提前将该结果进行缓存,调用 next 时没有加上限制也是为了符合素数在数学上的无穷性
+
+*Lodash.curry 是对柯里化进行了增强,对柯里化也进行了部分施用*
+
+### 缓求值列表
+
+当产生的序列属于之前产生序列的子集时,这个时候就可以利用列表形式将该子集做缓求值,以头(head)和末尾(tail)组成的列表, head 中可以包含子集但可不完全包含,末尾可以是子集与后追加序列
+
+下面先考虑一下一个简单的缓求值列表:
+
+```js
+function LazyList(list){
+    // 每个惰性的值都应该为数组
+  this.list = list
+}
+
+LazyList.init = function(){
+  return new LazyList( function(){ return []} )
+}
+
+LazyList.prototype.head = function(){
+  // 当需要的时候才会调整该函数
+  return this.list()[0]
+}
+
+LazyList.prototype.cons = function(head){
+  return new LazyList( function(){ return [head, this.list] } )
+}
+
+let ll = LazyList.init().cons(1).cons(2).cons(3)
+
+// [ 1, [Function: [ 2, Function:[ 3, Function: []]]]]
+
+console.log(ll.head())
+// => 3
+```
+
+其思路为,当每创建一个 LazyList 对象时内部会有个属性 list 记录一个函数,该函数为当前 LazyList 对象应该返回的值,只不过该值是由一个闭包负责,只有正直需要使用该值的时候才会调用该函数,如何取得其它值,这个就需要用上折叠等手段
+
+当然如何控制整个列表方式非常多,但核心的思想不会变,将值暂时停留在闭包中,当需要的时候再从该闭包得到值
+
+
+
+## 变换 柯里化增强 参数记忆
+
+> 在 JavaScript 中使用经典的柯里化的函数有一点不便： 当传递给一个函数的参数超过一项，以返回接收剩余参数的函数时，需要调用函数的次数等于传递的参数的数量，因为
+柯里化的函数一次只能接收一个参数，也就是说在函数名后面会跟着超过一对括号
+
+当方法需要柯里化使用时,手动将该方法写成柯里化形式和直接使用柯里化的方法对该方法进行柯里化明示效果要好得多,比如:
+
+```js
+const rangeRoutine = lodash.curry((step, start, end) => {
+  let seq = [],
+      index = start - 1
+  while( ++index < end && index * step < end &&
+    seq.push( index * step) ){}
+  return seq
+})
+
+console.log( rangeRoutine(1)(0)(4) )
+// => [ 0, 1, 2, 3 ]
+console.log( rangeRoutine(2, 1)(10) )
+// => [ 2, 4, 6, 8 ]
+console.log( rangeRoutine(3, 0, 10) )
+// => [ 0, 3, 6, 9 ]
+```
+
+
+### 部分施用的柯里化
+
+当使用每一次使用柯里化后的方法时可以先预使用两个或多个参数将剩余参数传递给返回的下一个方法使用,这也就对柯里化进行了部分施用,具体处理时应注意以下两点:
+
+1. 如果第一次使用柯里化后的方法时,传入参数和原方法参数个数一致则直接调用原方法
+2. 如果不是等长个数参数,则柯里化方法内部使用数组维护接收的部分参数
+
+```js
+function curry(fn){
+  // 被柯里化方法的形参长度
+  let len = fn.length
+  // 得到 curry 除开被柯里化函数外的所有参数当作初始部分参数
+  // !!! 柯里化方法中 len 和 saveArgs 变量都会被驻留在内存
+  let saveArgs = [].slice.call(arguments, 1)
+
+  // 被记忆的方法 _curry
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      let curArgs = saveArgs.concat([].slice.call(arguments))
+      return curArgs.length >= len ? 
+        fn.apply(fn, curArgs) : _curry(curArgs)
     }
-  } else if(window.attachEvent) {
-    return function(ele, type, fn) {
-       ele.attachEvent("on" + type, fn)
+  }(saveArgs))
+}
+
+const rangeRoutine = curry( function range_inner(step, start, end){
+  let seq = [],
+      index = start - 1
+  while( ++index < end && index * step < end &&
+    seq.push( index * step) ){}
+  return seq
+})
+
+console.log( rangeRoutine(1, 0)(5) )
+// => [ 0, 1, 2, 3, 4 ]
+console.log( rangeRoutine(2)(1)(10) )
+// => [ 2, 4, 6, 8 ]
+```
+
+这里需要特别注意的一点就是当 range_inner 直接被柯里化时,内部的 saveArgs 只记忆了一份初始化给 curry 除 range_inner 外所有参数,如果当第二次调用 rangeRoutine 时因为之前驻留的 saveArgs 会是之前的, 一旦在`_curry`或`_curry_inner`中被修改记忆的值就会发生变化,所以采用以参数的形式传入
+
+这里的核心思想主要是记忆参数为主,当传入的参数符合了原方法的参数个数就调用,否则会一直等待缓存参数个数与原方法形参个数相同
+
+### 从右向左的柯里化
+
+先提供三种最暴力的实现:
+
+1. 将 curyy 在应用原方法的时候的参数数组直接 reverse 就可以了
+2. 利用 Array.prototype.push 的特性,每次将当次传入的参数 push 记忆的参数
+3. 利用 Array.prototype.unshfit 的特性,每次记忆的参数 unshift 进当前传入参数
+
+下面分别提供 curryRight 部分源码:
+
+```js
+function curryRight(fn){
+  let len = fn.length
+  let saveArgs = [].slice.call(arguments, 1)
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      let curArgs = saveArgs.concat([].slice.call(arguments))
+      return curArgs.length >= len ? 
+        /* 将原应用参数倒排 */
+        fn.apply(fn, curArgs.reverse()) : _curry(curArgs)
+    }
+  }(saveArgs))
+}
+
+function curryRight(fn){
+  let len = fn.length
+  let saveArgs = [].slice.call(arguments, 1)
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      let curArgs = saveArgs.concat([].slice.call(arguments))
+      return curArgs.length >= len ? 
+        /* 将原应用参数倒排 */
+        fn.apply(fn, curArgs.reverse()) : _curry(curArgs)
+    }
+  }(saveArgs))
+}
+
+function curryRight(fn){
+  let len = fn.length
+  let saveArgs = [].slice.call(arguments, 1)
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      // 将当次的参数 push 记忆的参数
+      let curArgs = [].slice.call(arguments)
+      Array.prototype.push.apply(curArgs, saveArgs)
+
+      return curArgs.length >= len ? 
+        fn.apply(fn, curArgs.reverse()) : _curry(curArgs)
+    }
+  }(saveArgs))
+}
+
+function curryRight(fn){
+  let len = fn.length
+  let saveArgs = [].slice.call(arguments, 1)
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      // 将当记忆的参数 unshift 进当前参数
+      let curArgs = [].slice.call(arguments)
+      let temp = saveArgs
+      Array.prototype.unshift.apply(temp, curArgs)
+      curArgs = temp
+
+      return curArgs.length >= len ? 
+        fn.apply(fn, curArgs.reverse()) : _curry(curArgs)
+    }
+  }(saveArgs))
+}
+```
+
+但是上面这三种最快速的方法同样是从左向右处理参数,只是在处理参数的过程中顺序跌倒,
+
+### 改变位置的柯里化
+
+实现一个可以使用“占位符”顺位替换预留参数的柯里化,以下是顺位替换参数的两个要点:
+
+1. 每调用一次,记录当前占位符在原方法形参列表中的索引
+2. 当接收的参数个数减去占位符累积个数大于等于原方法形参个数时,对最后的参数用记录占位符顺位替换
+
+顺位替换不能出现占位符与参数一起出现:
+
+```js
+const _ = '_hlod_'
+
+function curry(fn){
+  let fnLen = fn.length
+  let curryArguments = arguments
+  let saveArgs = [].slice.call(curryArguments, 1)
+  let holdList = []
+
+  return (function _curry(saveArgs){
+    return function _curry_inner(){
+      let args = [].slice.call(arguments)
+      let curArgs = saveArgs.concat(args)
+      let curLen = curArgs.length
+      let index = -1, len = args.length
+      
+      // 记录每一次参数中占位符出现的位置
+      while( ++index < len ){
+        args[ index ] === _ && holdList.push(curLen + index - 1)
+      }
+
+      // 当接收所有参数个数减去占位符个数为原方法形参个数时
+      if( curLen - holdList.length >= fnLen ){
+        
+        // 遍历替换占位符
+        index = curLen - holdList.length - 1
+        while( ++index < curLen ){
+          // 将超过原方法形参长度后的所有参数当作替换占位符的实参
+          // shift() 从头依次替换
+          curArgs[ holdList.shift() ] = curArgs[ index ]
+        }
+        curArgs.length = fnLen
+        holdList.length = 0
+
+        return fn.apply(fn, curArgs)
+      }
+      return _curry(curArgs)
+    }
+  }(saveArgs))
+}
+
+const rangeRoutine = curry((step, start, end) => {
+  let seq = [],
+      index = start - 1
+  while( ++index < end && index * step < end &&
+    seq.push( index * step) ){}
+  return seq
+})
+console.log( rangeRoutine(1, 0)(5) )
+// => [ 0, 1, 2, 3, 4 ]
+console.log( rangeRoutine(_)(1)(_)(2)(10) )
+// => [ 2, 4, 6, 8 ]
+console.log( rangeRoutine(3)(_)(_)(0)(10) )
+// => [ 0, 3, 6, 9 ]
+console.log( rangeRoutine(_)(_)(_)(5)(1)(25) )
+// => [ 5, 10, 15, 20 ]
+
+console.log( rangeRoutine(4)(_)(1)(_)(17) )//=> []
+console.log( rangeRoutine(4)(_, 1)(_)(17) )//=> []
+```
+
+如上例子,如果当参数中存在占位符时,用上面的例子就会参数不是所预期那样,下面是从 lodash 中借鉴而来柯里化和作者冴羽的例子:
+
+```js
+const lodash = require('../lib/lodash.4.17.15.js')
+var fn = lodash.curry(function _fn(a, b, c, d, e) {
+    console.log([a, b, c, d, e]);
+});
+
+
+fn(1, 2, 3, 4, 5);
+fn(lodash, 2, 3, 4, 5)(1);
+fn(1, lodash, 3, 4, 5)(2);
+fn(1, lodash, 3)(lodash, 4)(2)(5);
+fn(1, lodash, lodash, 4)(lodash, 3)(2)(5);
+fn(lodash, 2)(lodash, lodash, 4)(1)(3)(5)
+fn(lodash, lodash, lodash, 4)(1)(2)(3)(5)
+// 以上结果均为 [ 1, 2, 3, 4, 5 ]
+
+fn(1, lodash, lodash, 4)(lodash,lodash,lodash,lodash, 5)(2)(3)
+// => [ 1, 2, 3, 4, '__lodash_placeholder__' ]
+```
+
+从该例子中这里就直接总结 lodash 中柯里化以下几点:
+
+1. 同位的占位符前者替换后者,下一次接收的参数替换上一次接收参数的占位符开始
+  - 如果都为占位符则保持不变
+  - 如果都不为占位则后者追加到前者
+  - 如果前者不为占位符则前者替换后者
+  - 如果前者为占位符则顺位替换
+2. 之后的顺补,当所接收的参数和超过原方法的形参个数那么这时会将超过部分依次对前面的占位符进行替换
+3. 多余占位符不处理,当超过参数部分还有占位符那么不做处理
+
+但最终结果所以应用的参数只能是原方法形参个数
+
+#### 终极版柯里化
+
+这里附上实现以下柯里化的几个要点:
+
+1. 柯里化方法维护一个计数器作为跳出递归条件
+  - 当计数器等于被柯里化方法后跳出递归
+2. 每次调用将传入的参数追加到记的参数后
+3. 利用改变位置的柯里化的规则每一次过滤占位符元素
+  - 追加的参数会用该规则做过滤
+
+从改变位置的柯里化例子中得到以下完善的柯里化实现:
+
+```js
+const _ = '_hlod_'
+const eqHold = x => x === _
+function curry(fn){
+  let fnLen = fn.length
+  // 记录内部有效参数个数
+  let count = 0
+
+  return (function _curry(saveArgs, holds){
+    return function _curry_inner(){
+      let useArgs = [],
+          // 用来追加到记忆参数的副本
+          // 会利用规则对其过滤
+          args = [].slice.call(arguments),
+          index = -1,
+          argLen = args.length,
+          length = saveArgs.length
+
+      // 遍历传入参数与记忆的占位符索引数组同位比较
+      while( ++index < argLen ){
+        let h = holds[index]
+        if( eqHold(arguments[ index ]) ){
+          let t = length  + index
+          // 向占位符索引数组增加当前在记忆的所有参数中的索引
+          holds.push( t )
+
+          // 1. 如果都为占位符则保持不变
+          if( eqHold(saveArgs[ h ]) ){
+            // 将副本参数头出队
+            args.shift()
+            // 因为后者也是占位符此时将之前的占位符从数组中删除
+            holds.splice(length, 1)
+          }
+        } else {
+          // 当每一次传入参数不是占位符则有效参数加1
+          count++
+          // 4. 前者为占位符后者不是则直接后者替换前者
+          if( eqHold(saveArgs[ h ]) ){
+            args.shift()
+            holds.splice(index, 1)
+            // 记忆的参数直接被当前参数替换
+            saveArgs[ h ] = arguments[ index ]
+          }
+        }
+      }
+
+      // 2. 都不为占位符则直接追加副本参数到记忆参数后
+      // 3. 前者不为占位符则前者替换后者，就相当于将当前的参数的头出队然后追加
+      useArgs = saveArgs.concat(args)
+
+      // 有效参数大于原方法形参个数时
+      if( count >= fnLen ){
+        // 重置有效参数个数和记忆的占位符索引数组
+        count = holds.length = 0
+        // 去掉多余的参数
+        useArgs.length = fnLen
+        return fn.apply(fn, useArgs)
+      }
+      return _curry(useArgs, holds)
+    }
+  }([].slice.call(arguments, 1), []))
+}
+
+const lodash = require('lodash')
+const fn = curry( (a, b, c, d, e) => console.log([a, b, c, d, e]) )
+const fn2 = lodash.curry( (a, b, c, d, e) => console.log([a, b, c, d, e]) )
+
+fn(1, 2, 3, 4, 5);
+fn(_, 2, 3, 4, 5)(1);
+fn(1, _, 3, 4, 5)(2);
+fn(1, _, 3)(_, 4)(2)(5);
+fn(1, _, _, 4)(_, 3)(2)(5)
+fn(_, 2)(_, _, 4)(1)(3)(5)
+fn(_, _, _, 4)(1)(2)(3)(5)
+// 以上均为 [ 1, 2, 3, 4, 5 ]
+
+fn(_, _, _, 4)(1)(2)(3)(_,_,5)
+fn2(lodash, lodash, lodash, 4)(1)(2)(3)(lodash,lodash,5)
+// => [ 1, 2, 3, 4, lodash ]
+```
+
+该柯里化思想借鉴 [lodash.curry](https://lodash.com/docs/4.17.15#curry),例子参考作者[冴羽的博客 JavaScript专题之函数柯里化](https://github.com/mqyqingfeng/Blog/issues/42)
+
+
+## 变换 运算符重载
+
+也许会有这样的一个疑问, eq,gt,lt 等等这样很多语言都存在,为什么不直接使用 ==,>,< 这些运算符来得直接
+
+可能两个数字可以直接使用 == 比较,也可以两个数组也可以直接使用 == 比较,但如果是两个抽象的类型或者是两个不能直接使用 == 比较的类型,但又可以用来判断是否相等
+
+> 运算符重载，就是对已有的运算符重新进行定义，赋予其另一种功能，以适应不同的数据类型
+
+下面直接举个简单的例子,比如让两个对象相加:
+
+```js
+let o1 = { a: 1, b: 10, c: function(){ return 13 } }
+let o2 = { a: 10, b: 20, c: function(){ return 14 } }
+
+console.log( o1 + o2 )
+// => [object Object][object Object]
+
+Object.prototype.plus = function(other){
+  let result = {},
+    keys = Object.keys(this),
+    len = keys.length,
+    index = -1
+
+  while( ++index < len){
+    let key = keys[ index ]
+    if( typeof this[ key ] === 'function' ){
+      let value = this[ key ]() + other[ key ]()
+      result[keys[index]] = function _v(){ return value }
+    } else {
+      result[keys[index]] = this[ key ] + other[ key ]
     }
   }
-})()
-// 该判断只执行了一次，利用闭包一直记录返回的函数
+  return result
+}
+
+let o3 = o1.plus(o2)
+console.log( o3 )
+// =>{ a: 11, b: 30, c: [Function: _v] }
+console.assert( 27 == o3.c() )
+
 ```
-3. 延迟运行
 
-AOP 方式，将函数延迟执行效果
+## 变换 复合(函数重用)
 
-## 偏函数
-一个多参数的函数且传入部分参数后，返回一个需要更少参数的新函数
+复合作为一种重用机制,在函数式语言中主要表现为通过参数来传递作为一等语言成分的函数,其重用机制建立在列表的概念,以及可以连同执行上下文一起传递的借到块的概念之上
 
-## 编译函数
+当语言拥有的闭包特性就不需要命令模式了,设计模式的存在就是为了弥补语言功能上的弱点
+
+
+
+### 工厂和抽象工厂处理if条件过多
+
+## 模板模式 template
+## 策略模式 Strategy
+## 享元模式 flyweight
+
+## 工厂模式和柯里化
+
+函数式的工厂模式的返回一个专有函数,
+
+```js
+const divides = x => y => y % x == 0
+console.log([2,3,4,5,9,7,6].filter(divides(2)))
+// => [ 2, 4, 6 ]
+console.log([2,3,4,5,9,7,6].filter(divides(3)))
+// => [ 3, 9, 6 ]
+```
 
 # javascript 类库--- [Lodash](https://lodash.com/)
 
@@ -3418,6 +4172,8 @@ lodash 提供的函数主要分为以下几类:
 # 后台(数据库设计,表设计,冗余/多表,查询,PHP,Node.js,Java,Python)
 
 # ...
+
+# ionic/flutter/react native
 
 # https://leohxj.gitbooks.io/front-end-database/content/index.html
 
@@ -3479,3 +4235,7 @@ Commit Message 格式
 - [MDN XMLHttpRequest API](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest)
 - [MDN Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
 - [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- [Neal Ford 作者阐述的函数式](https://www.ibm.com/developerworks/cn/java/j-ft14/)
+- [图灵程序设计丛书 函数式思维 Neal Ford]()
+- [JavaScript 函数式编程思想 潘俊]()
+- [冴羽的博客 JavaScript专题之函数柯里化](https://github.com/mqyqingfeng/Blog/issues/42)
